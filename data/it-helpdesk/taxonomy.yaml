@@ -1,0 +1,23 @@
+# IT helpdesk ticket taxonomy for the `it-helpdesk` domain.
+
+categories:
+  - name: hardware_issue
+    description: Laptop, monitor, keyboard, or other physical device problems.
+  - name: software_install
+    description: Request to install, update, or remove software.
+  - name: network_vpn
+    description: Wi-Fi, VPN, or network connectivity issues.
+  - name: access_request
+    description: New access to systems, shared drives, or applications.
+  - name: password_reset
+    description: Locked account, forgotten password, or credential reset.
+  - name: printer
+    description: Printer setup, jam, or print queue problems.
+  - name: other
+    description: Anything not covered above.
+
+severities:
+  - P1
+  - P2
+  - P3
+  - P4

@@ -1,0 +1,2 @@
+{"id": "IT-220", "user_id": "alex@example.com", "subject": "VPN disconnects every hour", "body": "Corporate VPN drops after 60 minutes.", "status": "resolved", "received_at": "2026-03-12T11:00:00Z"}
+{"id": "IT-301", "user_id": "alex@example.com", "subject": "Password reset throttled", "body": "Locked out after three reset attempts.", "status": "open", "received_at": "2026-05-10T07:31:00Z"}

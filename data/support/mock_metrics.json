@@ -1,0 +1,44 @@
+{
+  "auth-service": {
+    "error_rate": {
+      "current": 0.12,
+      "avg": 0.02,
+      "p95": 0.08,
+      "trend": "up"
+    },
+    "latency_ms": {
+      "current": 450,
+      "avg": 120,
+      "p95": 380,
+      "trend": "up"
+    }
+  },
+  "billing-service": {
+    "error_rate": {
+      "current": 0.01,
+      "avg": 0.01,
+      "p95": 0.02,
+      "trend": "flat"
+    },
+    "charge_failures": {
+      "current": 2,
+      "avg": 1,
+      "p95": 3,
+      "trend": "flat"
+    }
+  },
+  "reports-service": {
+    "error_rate": {
+      "current": 0.05,
+      "avg": 0.01,
+      "p95": 0.03,
+      "trend": "up"
+    },
+    "export_timeouts": {
+      "current": 8,
+      "avg": 1,
+      "p95": 5,
+      "trend": "up"
+    }
+  }
+}

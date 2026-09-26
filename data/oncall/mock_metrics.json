@@ -1,0 +1,24 @@
+{
+  "api-gateway": {
+    "error_rate": {
+      "current": 0.18,
+      "avg": 0.02,
+      "p95": 0.1,
+      "trend": "up"
+    },
+    "latency_ms": {
+      "current": 920,
+      "avg": 180,
+      "p95": 650,
+      "trend": "up"
+    }
+  },
+  "checkout-service": {
+    "error_rate": {
+      "current": 0.09,
+      "avg": 0.01,
+      "p95": 0.05,
+      "trend": "up"
+    }
+  }
+}

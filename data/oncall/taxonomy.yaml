@@ -1,0 +1,23 @@
+# On-call alert taxonomy for the `oncall` domain.
+
+categories:
+  - name: service_outage
+    description: Complete or partial service unavailability.
+  - name: latency_spike
+    description: Elevated latency or slow response times.
+  - name: error_rate
+    description: Spike in 5xx or application error rates.
+  - name: disk_full
+    description: Disk or storage capacity alerts.
+  - name: certificate_expiry
+    description: TLS certificate nearing or past expiration.
+  - name: deployment_failure
+    description: Failed or rolled-back deployment.
+  - name: other
+    description: Anything not covered above.
+
+severities:
+  - P1
+  - P2
+  - P3
+  - P4

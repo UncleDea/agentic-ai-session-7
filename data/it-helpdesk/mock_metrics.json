@@ -1,0 +1,24 @@
+{
+  "vpn-gateway": {
+    "error_rate": {
+      "current": 0.04,
+      "avg": 0.01,
+      "p95": 0.03,
+      "trend": "up"
+    },
+    "connected_users": {
+      "current": 842,
+      "avg": 900,
+      "p95": 950,
+      "trend": "down"
+    }
+  },
+  "identity-service": {
+    "password_resets": {
+      "current": 45,
+      "avg": 20,
+      "p95": 35,
+      "trend": "up"
+    }
+  }
+}

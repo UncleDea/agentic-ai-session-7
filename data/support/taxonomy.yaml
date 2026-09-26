@@ -1,0 +1,26 @@
+# Sample ticket taxonomy for the `support` domain.
+# Used by the Triager on Day 6 to classify incoming tickets.
+
+categories:
+  - name: login_issue
+    description: User cannot log in. Password resets, MFA problems, account locked.
+  - name: billing
+    description: Invoices, refunds, plan changes, payment failures.
+  - name: bug_report
+    description: User reports broken functionality with reproducible steps.
+  - name: feature_request
+    description: User asks for a feature that does not exist.
+  - name: integration_help
+    description: User needs help wiring up an external integration (Slack, Stripe, etc).
+  - name: data_export
+    description: User asks to export their data or to delete their account.
+  - name: account_security
+    description: Suspected unauthorized access, suspicious activity.
+  - name: other
+    description: Anything not covered above.
+
+severities:
+  - P1   # business-critical, immediate
+  - P2   # significant impact, same-day
+  - P3   # routine, within 2 business days
+  - P4   # nice-to-have, no SLA

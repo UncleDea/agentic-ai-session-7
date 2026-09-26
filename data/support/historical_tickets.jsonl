@@ -1,0 +1,5 @@
+{"id": "TKT-0901", "user_id": "priya.s@example.com", "subject": "MFA code expired immediately", "body": "Authenticator codes fail within seconds.", "status": "resolved", "received_at": "2026-04-02T08:10:00Z"}
+{"id": "TKT-0950", "user_id": "priya.s@example.com", "subject": "Password reset link expired", "body": "Reset email link said expired on first click.", "status": "resolved", "received_at": "2026-04-18T14:22:00Z"}
+{"id": "TKT-1001", "user_id": "priya.s@example.com", "subject": "Cannot log in - MFA loop", "body": "Codes from authenticator app loop back to login.", "status": "open", "received_at": "2026-05-10T09:14:22Z"}
+{"id": "TKT-1002", "user_id": "marc.w@example.com", "subject": "Where is my refund?", "body": "Cancelled Pro plan but still charged $79.", "status": "open", "received_at": "2026-05-10T10:01:11Z"}
+{"id": "TKT-1004", "user_id": "lisa.f@example.com", "subject": "Report export hangs at 50%", "body": "Export PDF stalls at halfway for large reports.", "status": "open", "received_at": "2026-05-10T13:22:09Z"}

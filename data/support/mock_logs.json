@@ -1,0 +1,15 @@
+{
+  "auth-service": [
+    {"timestamp": "2026-05-10T09:14:20Z", "level": "WARN", "message": "user=priya.s@example.com mfa_verify failed code=expired"},
+    {"timestamp": "2026-05-10T09:14:21Z", "level": "WARN", "message": "user=priya.s@example.com mfa_verify failed code=replay"},
+    {"timestamp": "2026-05-10T09:14:23Z", "level": "ERROR", "message": "user=priya.s@example.com session_create failed reason=mfa_loop_detected"}
+  ],
+  "billing-service": [
+    {"timestamp": "2026-04-28T18:01:11Z", "level": "INFO", "message": "user=marc.w@example.com plan_cancel scheduled_end=2026-05-28"},
+    {"timestamp": "2026-05-01T03:00:00Z", "level": "INFO", "message": "user=marc.w@example.com renewal_attempt charged_usd=79.00 success=true"}
+  ],
+  "reports-service": [
+    {"timestamp": "2026-05-10T13:22:10Z", "level": "INFO", "message": "user=lisa.f@example.com export_pdf rows=1200 stage=render started"},
+    {"timestamp": "2026-05-10T13:22:42Z", "level": "ERROR", "message": "user=lisa.f@example.com export_pdf stage=render timeout=30s rows_completed=600"}
+  ]
+}

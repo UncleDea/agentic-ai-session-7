@@ -1,0 +1,11 @@
+{
+  "api-gateway": [
+    {"timestamp": "2026-05-10T15:00:01Z", "level": "ERROR", "message": "upstream=checkout-service status=503 latency_ms=1200"},
+    {"timestamp": "2026-05-10T15:00:05Z", "level": "ERROR", "message": "upstream=checkout-service status=503 latency_ms=980"},
+    {"timestamp": "2026-05-10T15:01:00Z", "level": "WARN", "message": "circuit_breaker=checkout-service state=open"}
+  ],
+  "checkout-service": [
+    {"timestamp": "2026-05-10T14:59:50Z", "level": "ERROR", "message": "db_pool exhausted active=100 max=100"},
+    {"timestamp": "2026-05-10T15:00:00Z", "level": "ERROR", "message": "request_failed route=/pay reason=timeout"}
+  ]
+}

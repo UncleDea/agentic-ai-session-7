@@ -1,0 +1,10 @@
+{
+  "vpn-gateway": [
+    {"timestamp": "2026-05-10T08:55:00Z", "level": "WARN", "message": "user=alex@example.com vpn_auth failed reason=certificate_mismatch"},
+    {"timestamp": "2026-05-10T08:56:10Z", "level": "ERROR", "message": "user=alex@example.com vpn_tunnel drop reason=idle_timeout"}
+  ],
+  "identity-service": [
+    {"timestamp": "2026-05-10T07:30:00Z", "level": "INFO", "message": "user=alex@example.com password_reset requested"},
+    {"timestamp": "2026-05-10T07:30:05Z", "level": "WARN", "message": "user=alex@example.com password_reset throttled attempts=3"}
+  ]
+}

@@ -1,0 +1,6 @@
+data/outbox/
+data/reviews/
+.pytest_cache/
+pytest-cache-files-*/
+*.egg-info/
+__pycache__/

@@ -15,6 +15,7 @@ from triage_agent.tools.sender import (
     JsonEscalationLog,
     OutboxSender,
     Sender,
+    list_open,
 )
 from triage_agent.tools.ticket_db import (
     CustomerStore,
@@ -40,6 +41,7 @@ __all__ = [
     "StoreKnowledgeBase",
     "build_tools",
     "knowledge_base_for_settings",
+    "list_open",
 ]
 
 

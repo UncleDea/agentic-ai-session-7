@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal, Protocol
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 _UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
@@ -99,6 +99,29 @@ class JsonEscalationLog:
 
     def _path(self, thread_id: str) -> Path:
         return self.directory / _filename(thread_id)
+
+
+def list_open(directory: Path) -> tuple[list[EscalationRecord], list[str]]:
+    """Open escalation records, plus file names that could not be read.
+
+    A record whose status is not open fails validation and is skipped.
+    """
+    if not directory.is_dir():
+        return [], []
+    records: list[EscalationRecord] = []
+    skipped: list[str] = []
+    for path in sorted(directory.glob("*.json")):
+        try:
+            record = EscalationRecord.model_validate_json(
+                path.read_text(encoding="utf-8")
+            )
+        except (OSError, ValueError, ValidationError):
+            skipped.append(path.name)
+            continue
+        if record.status == "open":
+            records.append(record)
+    records.sort(key=lambda row: (row.created_at, row.thread_id))
+    return records, skipped
 
 
 def _filename(thread_id: str) -> str:

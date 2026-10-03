@@ -7,7 +7,10 @@ from typing import Literal, cast
 
 from langgraph.graph import END, START, StateGraph
 
+from langgraph.store.sqlite import SqliteStore
+
 from triage_agent.config import Settings, get_settings
+from triage_agent.memory.store import store_for_settings
 from triage_agent.nodes.hitl import hitl
 from triage_agent.nodes.investigator import investigator
 from triage_agent.nodes.responder import responder
@@ -23,10 +26,12 @@ def build_graph(
     model=None,
     settings: Settings | None = None,
     hitl_node: Callable[[TicketState], dict] | None = None,
+    store: SqliteStore | None = None,
 ):
     """Compile the skeleton. Pass a model to avoid constructing a live client."""
     active = settings if settings is not None else get_settings()
     review = hitl if hitl_node is None else hitl_node
+    memory = store if store is not None else store_for_settings(active)
 
     def supervisor_node(state: TicketState) -> dict:
         return supervisor(state, settings=active)
@@ -37,6 +42,9 @@ def build_graph(
     def investigator_node(state: TicketState) -> dict:
         return investigator(state, model=model, settings=active)
 
+    def responder_node(state: TicketState) -> dict:
+        return responder(state, model=model, settings=active, store=memory)
+
     def route(state: TicketState) -> _Next:
         return cast(_Next, state["next_node"])
 
@@ -44,7 +52,7 @@ def build_graph(
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("triage", triage_node)
     graph.add_node("investigator", investigator_node)
-    graph.add_node("responder", responder)
+    graph.add_node("responder", responder_node)
     graph.add_node("hitl", review)
     graph.add_node("send", send)
     graph.add_edge(START, "supervisor")
@@ -65,4 +73,4 @@ def build_graph(
             "end": END,
         },
     )
-    return graph.compile()
+    return graph.compile(store=memory)

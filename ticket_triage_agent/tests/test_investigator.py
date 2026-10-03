@@ -422,6 +422,11 @@ def test_empty_searches_leave_missing_info_empty_and_route_to_send() -> None:
                     related_ticket_ids=["PT-9999"],
                     kb_article_ids=["KB-999"],
                 )
+            if self.schema is Draft:
+                return Draft(
+                    reply="Thanks for writing. We are looking into this.",
+                    confidence=0.95,
+                )
             if self.schema is None:
                 self.step += 1
                 calls = {

@@ -30,6 +30,8 @@ def needs_hitl(state: TicketState, settings: Settings) -> tuple[bool, str]:
     draft = state.get("draft")
     if draft is not None and draft.confidence < settings.confidence_threshold:
         reasons.append("draft confidence below threshold")
+    if draft is not None and draft.escalates:
+        reasons.append("escalation promised")
     if triage.sentiment in settings.hitl_sentiments:
         reasons.append(f"sentiment {triage.sentiment.value}")
     if triage.category in settings.hitl_categories:
@@ -67,6 +69,8 @@ def _decide(state: TicketState, settings: Settings) -> tuple[str, str, bool, boo
     repeated-error rules so a reviewer can still release a capped run.
     Cap, repeated errors, and a rejected review at the revision cap mark
     the run escalated. The next pass then sends an approval or stops.
+    A revised draft that nobody has reviewed yet goes to HITL before the
+    general criteria and the default send. An approval still sends.
     """
     if state.get("sent"):
         return "end", "already sent", False, False
@@ -108,6 +112,9 @@ def _decide(state: TicketState, settings: Settings) -> tuple[str, str, bool, boo
         if state.get("revision_count", 0) >= settings.max_revisions:
             return "hitl", "revision cap", True, False
         return "responder", "review rejected; revision", False, False
+
+    if state.get("revision_count", 0) > 0 and status in (None, ReviewStatus.pending):
+        return "hitl", "revised draft needs review", False, False
 
     required, reason = needs_hitl(state, settings)
     if required:

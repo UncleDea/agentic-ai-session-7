@@ -153,6 +153,17 @@ class Investigation(_Model):
 class Draft(_Model):
     reply: str
     memory_ids: list[str] = Field(default_factory=list)
+    flagged_claims: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Order ids, amounts, dates, promises, timeframes, or completed "
+            "actions that the findings and used articles do not support."
+        ),
+    )
+    escalates: bool = Field(
+        default=False,
+        description="True when the reply promises that a person will follow up.",
+    )
     confidence: float = Field(ge=0, le=1)
 
 

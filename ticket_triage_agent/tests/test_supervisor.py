@@ -11,6 +11,7 @@ from langchain_core.messages import AIMessage
 
 from triage_agent.config import Settings
 from triage_agent.graph import build_graph
+from triage_agent.memory.store import FAKE_DIMS, FAKE_MODEL, fake_embeddings, open_store
 from triage_agent.nodes.responder import responder
 from triage_agent.nodes.supervisor import supervisor
 from triage_agent.state import (
@@ -56,6 +57,11 @@ class FakeModel:
             return Investigation(
                 findings=[Finding(fact="invoice 42", source="orders")],
                 missing_info=[],
+            )
+        if self.schema is Draft:
+            return Draft(
+                reply="Thanks for writing. We are looking into this.",
+                confidence=0.95,
             )
         if self.schema is None:
             return AIMessage(content="done")
@@ -248,6 +254,33 @@ def test_rejected_review_routes_to_responder_until_revision_cap(
     _assert_route(state, "responder", "review rejected; revision")
 
 
+def test_revised_draft_without_other_hitl_criteria_routes_to_hitl() -> None:
+    _assert_route(
+        _investigated(revision_count=1),
+        "hitl",
+        "revised draft needs review",
+    )
+    _assert_route(
+        _investigated(
+            revision_count=1,
+            review=Review(status=ReviewStatus.pending),
+        ),
+        "hitl",
+        "revised draft needs review",
+    )
+
+
+def test_approved_revision_sends() -> None:
+    _assert_route(
+        _investigated(
+            revision_count=1,
+            review=Review(status=ReviewStatus.approved),
+        ),
+        "send",
+        "review approved",
+    )
+
+
 def test_rejected_review_at_revision_cap_escalates_to_hitl() -> None:
     state = _investigated(
         review=Review(status=ReviewStatus.rejected, reviewer_feedback="too vague"),
@@ -415,7 +448,7 @@ def test_graph_send_path_records_route_history(_no_live_model: None) -> None:
     assert result["sent"] is True
     assert result["final_reply"] == "stub reply"
     assert result["escalated"] is False
-    assert fake.invoke_count == 3
+    assert fake.invoke_count == 4
 
 
 def test_graph_spam_ends_without_sending(_no_live_model: None) -> None:
@@ -485,17 +518,29 @@ def test_graph_rejected_at_max_revisions_terminates(_no_live_model: None) -> Non
     _assert_manual_stop(result, "revision cap")
 
 
-@pytest.mark.xfail(
-    reason="Phase 5 responder resets review and increments revision_count",
-    strict=True,
-)
 def test_revision_resets_review_and_increments_revision_count() -> None:
-    state = _investigated(
-        review=Review(status=ReviewStatus.rejected, reviewer_feedback="be specific"),
-        revision_count=1,
+    class _DraftModel:
+        def with_structured_output(self, schema, **kwargs):
+            return self
+
+        def invoke(self, messages):
+            return Draft(reply="Here is a more specific update.", confidence=0.9)
+
+    store = open_store(
+        ":memory:",
+        fake_embeddings(),
+        dims=FAKE_DIMS,
+        model=FAKE_MODEL,
     )
-    decision = supervisor(state, settings=Settings())
-    assert decision["next_node"] == "responder"
-    update = responder(state)
+    try:
+        state = _investigated(
+            review=Review(status=ReviewStatus.rejected, reviewer_feedback="be specific"),
+            revision_count=1,
+        )
+        decision = supervisor(state, settings=Settings())
+        assert decision["next_node"] == "responder"
+        update = responder(state, model=_DraftModel(), settings=Settings(), store=store)
+    finally:
+        store.conn.close()
     assert "review" in update and update["review"] is None
     assert update["revision_count"] == 2

@@ -155,6 +155,7 @@ class TicketState(TypedDict, total=False):
     iteration_count: int
     revision_count: int
     errors: Annotated[list[str], operator.add]
+    escalated: bool
 
 
 def initial_state(ticket: Ticket) -> TicketState:
@@ -173,4 +174,5 @@ def initial_state(ticket: Ticket) -> TicketState:
         "iteration_count": 0,
         "revision_count": 0,
         "errors": [],
+        "escalated": False,
     }

@@ -30,6 +30,18 @@ class Settings(BaseModel):
     hitl_categories: list[Category] = Field(
         default_factory=lambda: [Category.refund, Category.security, Category.legal]
     )
+    investigation_categories: list[Category] = Field(
+        default_factory=lambda: [
+            Category.billing,
+            Category.technical,
+            Category.account,
+            Category.shipping,
+            Category.refund,
+            Category.security,
+            Category.legal,
+            Category.other,
+        ]
+    )
 
 
 def _csv(name: str) -> list[str] | None:
@@ -58,6 +70,7 @@ def _overrides() -> dict[str, object]:
         "HITL_PRIORITIES": "hitl_priorities",
         "HITL_SENTIMENTS": "hitl_sentiments",
         "HITL_CATEGORIES": "hitl_categories",
+        "INVESTIGATION_CATEGORIES": "investigation_categories",
     }
     for env_name, field_name in lists.items():
         values = _csv(env_name)

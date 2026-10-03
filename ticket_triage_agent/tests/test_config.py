@@ -19,6 +19,7 @@ _SETTING_ENV = (
     "HITL_PRIORITIES",
     "HITL_SENTIMENTS",
     "HITL_CATEGORIES",
+    "INVESTIGATION_CATEGORIES",
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
 )
@@ -51,6 +52,16 @@ def test_defaults_load_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
         Category.security,
         Category.legal,
     ]
+    assert settings.investigation_categories == [
+        Category.billing,
+        Category.technical,
+        Category.account,
+        Category.shipping,
+        Category.refund,
+        Category.security,
+        Category.legal,
+        Category.other,
+    ]
 
 
 def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -58,10 +69,12 @@ def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MODEL_PROVIDER", "anthropic")
     monkeypatch.setenv("CONFIDENCE_THRESHOLD", "0.4")
     monkeypatch.setenv("MAX_ITERATIONS", "3")
+    monkeypatch.setenv("INVESTIGATION_CATEGORIES", "feedback")
     settings = get_settings()
     assert settings.model_provider == "anthropic"
     assert settings.confidence_threshold == 0.4
     assert settings.max_iterations == 3
+    assert settings.investigation_categories == [Category.feedback]
 
 
 def test_unknown_provider_rejected(monkeypatch: pytest.MonkeyPatch) -> None:

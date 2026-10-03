@@ -158,6 +158,7 @@ def test_initial_state_is_unset() -> None:
     assert state["route_history"] == []
     assert state["errors"] == []
     assert state["iteration_count"] == 0
+    assert state["escalated"] is False
 
 
 def test_list_fields_accumulate_and_counts_overwrite() -> None:

@@ -430,10 +430,17 @@ def test_logs_destination_and_ticket_id(caplog: pytest.LogCaptureFixture) -> Non
     assert "decision=triage" in caplog.text
 
 
-def test_graph_send_path_records_route_history(_no_live_model: None) -> None:
+def _mail(tmp_path) -> Settings:
+    return Settings(
+        outbox_dir=str(tmp_path / "outbox"),
+        escalations_dir=str(tmp_path / "escalations"),
+    )
+
+
+def test_graph_send_path_records_route_history(_no_live_model: None, tmp_path) -> None:
     fake = FakeModel(_triage())
-    graph = build_graph(model=fake, settings=Settings())
-    result = graph.invoke(_state())
+    graph = build_graph(model=fake, settings=_mail(tmp_path))
+    result = graph.invoke(_state(), thread_config("T-001", "send"))
     assert [entry.node for entry in result["route_history"]] == [
         "triage",
         "investigator",
@@ -447,7 +454,7 @@ def test_graph_send_path_records_route_history(_no_live_model: None) -> None:
         "hitl criteria not met",
     ]
     assert result["sent"] is True
-    assert result["final_reply"] == "stub reply"
+    assert result["final_reply"] == "Thanks for writing. We are looking into this."
     assert result["escalated"] is False
     assert fake.invoke_count == 4
 
@@ -467,7 +474,7 @@ def test_graph_priority_hitl_then_sends(_no_live_model: None, tmp_path) -> None:
     saver = open_checkpointer(str(tmp_path / "checkpoints.sqlite"))
     try:
         fake = FakeModel(_triage(priority=Priority.P1))
-        graph = build_graph(model=fake, settings=Settings(), checkpointer=saver)
+        graph = build_graph(model=fake, settings=_mail(tmp_path), checkpointer=saver)
         config = thread_config("T-001", "prio")
         graph.invoke(_state(), config, durability="sync")
         paused = graph.get_state(config)
@@ -502,32 +509,32 @@ def _assert_manual_stop(result: dict, first_reason: str) -> None:
     assert result["next_node"] == "end"
 
 
-def test_graph_iteration_cap_terminates(_no_live_model: None) -> None:
-    graph = build_graph(settings=Settings(), hitl_node=_rejected_hitl)
-    result = graph.invoke(
-        _state(iteration_count=10),
-        config={"recursion_limit": _LOW_RECURSION},
-    )
+def _capped(tmp_path, run_id: str) -> dict:
+    config = thread_config("T-001", run_id)
+    config["recursion_limit"] = _LOW_RECURSION
+    return config
+
+
+def test_graph_iteration_cap_terminates(_no_live_model: None, tmp_path) -> None:
+    graph = build_graph(settings=_mail(tmp_path), hitl_node=_rejected_hitl)
+    result = graph.invoke(_state(iteration_count=10), _capped(tmp_path, "cap"))
     _assert_manual_stop(result, "iteration cap")
 
 
-def test_graph_repeated_error_terminates(_no_live_model: None) -> None:
-    graph = build_graph(settings=Settings(), hitl_node=_rejected_hitl)
-    result = graph.invoke(
-        _state(errors=["boom", "boom"]),
-        config={"recursion_limit": _LOW_RECURSION},
-    )
+def test_graph_repeated_error_terminates(_no_live_model: None, tmp_path) -> None:
+    graph = build_graph(settings=_mail(tmp_path), hitl_node=_rejected_hitl)
+    result = graph.invoke(_state(errors=["boom", "boom"]), _capped(tmp_path, "repeat"))
     _assert_manual_stop(result, "repeated error")
 
 
-def test_graph_rejected_at_max_revisions_terminates(_no_live_model: None) -> None:
-    graph = build_graph(settings=Settings(), hitl_node=_rejected_hitl)
+def test_graph_rejected_at_max_revisions_terminates(_no_live_model: None, tmp_path) -> None:
+    graph = build_graph(settings=_mail(tmp_path), hitl_node=_rejected_hitl)
     result = graph.invoke(
         _investigated(
             review=Review(status=ReviewStatus.rejected, reviewer_feedback="too vague"),
             revision_count=2,
         ),
-        config={"recursion_limit": _LOW_RECURSION},
+        _capped(tmp_path, "revise"),
     )
     _assert_manual_stop(result, "revision cap")
 

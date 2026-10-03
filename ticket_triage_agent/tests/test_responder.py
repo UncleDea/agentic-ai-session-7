@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from triage_agent.config import Settings, get_settings
-from triage_agent.graph import build_graph
+from triage_agent.graph import build_graph, thread_config
 from triage_agent.memory.episodic import seed_episodes
 from triage_agent.memory.procedural import seed_procedures
 from triage_agent.memory.semantic import seed_articles
@@ -443,7 +443,7 @@ def test_flagged_draft_routes_to_hitl(store) -> None:
     assert decision["route_history"][0].reason == "draft confidence below threshold"
 
 
-def test_graph_passes_the_store(store) -> None:
+def test_graph_passes_the_store(store, tmp_path) -> None:
     seed_procedures(store)
 
     class FeedbackModel:
@@ -466,8 +466,15 @@ def test_graph_passes_the_store(store) -> None:
                 sentiment=Sentiment.positive,
             )
 
-    graph = build_graph(model=FeedbackModel(), settings=Settings(), store=store)
-    result = graph.invoke(initial_state(_ticket()))
+    graph = build_graph(
+        model=FeedbackModel(),
+        settings=Settings(
+            outbox_dir=str(tmp_path / "outbox"),
+            escalations_dir=str(tmp_path / "escalations"),
+        ),
+        store=store,
+    )
+    result = graph.invoke(initial_state(_ticket()), thread_config("T-001", "store"))
     assert [entry.node for entry in result["route_history"]] == [
         "triage",
         "responder",

@@ -6,6 +6,7 @@ __pycache__/
 dist/
 build/
 outbox/
+escalations/
 data/memory.sqlite
 data/memory.sqlite-wal
 data/memory.sqlite-shm

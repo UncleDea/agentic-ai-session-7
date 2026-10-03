@@ -1,4 +1,4 @@
-"""Lookup tools. Each store is replaceable without changing the tool names."""
+"""Lookup and delivery tools. Each store is replaceable without changing names."""
 
 from __future__ import annotations
 
@@ -9,6 +9,12 @@ from triage_agent.tools.knowledge_base import (
     KnowledgeBase,
     StoreKnowledgeBase,
     knowledge_base_for_settings,
+)
+from triage_agent.tools.sender import (
+    EscalationLog,
+    JsonEscalationLog,
+    OutboxSender,
+    Sender,
 )
 from triage_agent.tools.ticket_db import (
     CustomerStore,
@@ -21,12 +27,16 @@ from triage_agent.tools.ticket_db import (
 
 __all__ = [
     "CustomerStore",
+    "EscalationLog",
     "JsonCustomerStore",
+    "JsonEscalationLog",
     "JsonOrderStore",
     "JsonPastTicketStore",
     "KnowledgeBase",
     "OrderStore",
+    "OutboxSender",
     "PastTicketStore",
+    "Sender",
     "StoreKnowledgeBase",
     "build_tools",
     "knowledge_base_for_settings",

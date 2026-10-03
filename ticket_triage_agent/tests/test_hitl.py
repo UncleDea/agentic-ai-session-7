@@ -110,10 +110,17 @@ def _ready(
 
 
 def _compile(path, store, model=None, settings: Settings | None = None):
+    root = Path(path).parent
+    active = (settings or Settings()).model_copy(
+        update={
+            "outbox_dir": str(root / "outbox"),
+            "escalations_dir": str(root / "escalations"),
+        }
+    )
     saver = open_checkpointer(str(path))
     graph = build_graph(
         model=model,
-        settings=settings or Settings(),
+        settings=active,
         store=store,
         checkpointer=saver,
     )

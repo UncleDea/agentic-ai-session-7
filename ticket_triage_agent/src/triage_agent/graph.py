@@ -1,4 +1,4 @@
-"""Hub-and-spoke graph. Workers return to the supervisor; send and end stop."""
+"""Hub-and-spoke graph. Workers return to the supervisor; send and close stop."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import uuid
 from collections.abc import Callable
 from typing import Literal, TypedDict, cast
 
+from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.sqlite import SqliteStore
@@ -16,12 +17,13 @@ from triage_agent.memory.store import store_for_settings
 from triage_agent.nodes.hitl import hitl
 from triage_agent.nodes.investigator import investigator
 from triage_agent.nodes.responder import responder
-from triage_agent.nodes.send import send
+from triage_agent.nodes.send import close_run, send
 from triage_agent.nodes.supervisor import supervisor
 from triage_agent.nodes.triage import triage
 from triage_agent.state import TicketState
 
 _Next = Literal["triage", "investigator", "responder", "hitl", "send", "end"]
+_AfterSend = Literal["hitl", "end"]
 
 
 class PausedRun(TypedDict):
@@ -108,8 +110,19 @@ def build_graph(
     def review_node(state: TicketState) -> dict:
         return hitl(state, store=memory)
 
+    def send_node(state: TicketState, config: RunnableConfig) -> dict:
+        return send(state, config=config, settings=active)
+
+    def close_node(state: TicketState, config: RunnableConfig) -> dict:
+        return close_run(state, config=config, settings=active)
+
     def route(state: TicketState) -> _Next:
         return cast(_Next, state["next_node"])
+
+    def route_after_send(state: TicketState) -> _AfterSend:
+        if state.get("next_node") == "hitl":
+            return "hitl"
+        return "end"
 
     review = review_node if hitl_node is None else hitl_node
     graph = StateGraph(TicketState)
@@ -118,13 +131,19 @@ def build_graph(
     graph.add_node("investigator", investigator_node)
     graph.add_node("responder", responder_node)
     graph.add_node("hitl", review)
-    graph.add_node("send", send)
+    graph.add_node("send", send_node)
+    graph.add_node("close", close_node)
     graph.add_edge(START, "supervisor")
     graph.add_edge("triage", "supervisor")
     graph.add_edge("investigator", "supervisor")
     graph.add_edge("responder", "supervisor")
     graph.add_edge("hitl", "supervisor")
-    graph.add_edge("send", END)
+    graph.add_edge("close", END)
+    graph.add_conditional_edges(
+        "send",
+        route_after_send,
+        {"hitl": "hitl", "end": END},
+    )
     graph.add_conditional_edges(
         "supervisor",
         route,
@@ -134,7 +153,7 @@ def build_graph(
             "responder": "responder",
             "hitl": "hitl",
             "send": "send",
-            "end": END,
+            "end": "close",
         },
     )
     if saver is None:

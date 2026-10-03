@@ -12,7 +12,7 @@ import pytest
 from langchain_core.messages import AIMessage
 
 from triage_agent.config import Settings, get_settings
-from triage_agent.graph import build_graph
+from triage_agent.graph import build_graph, thread_config
 from triage_agent.nodes.investigator import investigator, kb_query, load_prompt
 from triage_agent.nodes.supervisor import supervisor
 from triage_agent.state import (
@@ -395,7 +395,7 @@ def test_wrong_amount_is_dropped_and_does_not_force_review(
     assert decision["route_history"][0].reason == "hitl criteria not met"
 
 
-def test_empty_searches_leave_missing_info_empty_and_route_to_send() -> None:
+def test_empty_searches_leave_missing_info_empty_and_route_to_send(tmp_path) -> None:
     class RouteModel:
         def __init__(self) -> None:
             self.schema = None
@@ -442,8 +442,14 @@ def test_empty_searches_leave_missing_info_empty_and_route_to_send() -> None:
                 return calls.get(self.step, AIMessage(content="done"))
             return _safe_triage()
 
-    graph = build_graph(model=RouteModel(), settings=Settings())
-    result = graph.invoke(_state_for("T-002"))
+    graph = build_graph(
+        model=RouteModel(),
+        settings=Settings(
+            outbox_dir=str(tmp_path / "outbox"),
+            escalations_dir=str(tmp_path / "escalations"),
+        ),
+    )
+    result = graph.invoke(_state_for("T-002"), thread_config("T-002", "send"))
     assert result["investigation"].missing_info == []
     assert result["investigation"].related_ticket_ids == []
     assert result["investigation"].kb_article_ids == []

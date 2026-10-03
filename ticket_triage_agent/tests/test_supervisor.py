@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timezone
 
 import pytest
+from langchain_core.messages import AIMessage
 
 from triage_agent.config import Settings
 from triage_agent.graph import build_graph
@@ -34,15 +35,30 @@ _LOW_RECURSION = 6
 
 
 class FakeModel:
+    """Triage stub that also satisfies the investigator tool loop."""
+
     def __init__(self, result: TriageResult) -> None:
         self.result = result
         self.invoke_count = 0
+        self.schema = None
 
-    def with_structured_output(self, schema):
+    def bind_tools(self, tools, **kwargs):
+        self.schema = None
+        return self
+
+    def with_structured_output(self, schema, **kwargs):
+        self.schema = schema
         return self
 
     def invoke(self, messages):
         self.invoke_count += 1
+        if self.schema is Investigation:
+            return Investigation(
+                findings=[Finding(fact="invoice 42", source="orders")],
+                missing_info=[],
+            )
+        if self.schema is None:
+            return AIMessage(content="done")
         return self.result
 
 
@@ -399,7 +415,7 @@ def test_graph_send_path_records_route_history(_no_live_model: None) -> None:
     assert result["sent"] is True
     assert result["final_reply"] == "stub reply"
     assert result["escalated"] is False
-    assert fake.invoke_count == 1
+    assert fake.invoke_count == 3
 
 
 def test_graph_spam_ends_without_sending(_no_live_model: None) -> None:

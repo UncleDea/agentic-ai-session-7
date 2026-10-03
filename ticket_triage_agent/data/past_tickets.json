@@ -1,0 +1,26 @@
+[
+  {
+    "id": "PT-2001",
+    "customer_id": "C-1001",
+    "source": "past_ticket:PT-2001",
+    "subject": "Earlier duplicate charge",
+    "body": "Asked about a duplicate charge on a previous order in January.",
+    "resolved_at": "2026-01-15"
+  },
+  {
+    "id": "PT-2014",
+    "customer_id": "C-1014",
+    "source": "past_ticket:PT-2014",
+    "subject": "First billing complaint",
+    "body": "Asked to remove a monthly plan billing charge after canceling.",
+    "resolved_at": "2026-02-10"
+  },
+  {
+    "id": "PT-2015",
+    "customer_id": "C-1014",
+    "source": "past_ticket:PT-2015",
+    "subject": "Second billing complaint",
+    "body": "Asked again to remove the monthly plan billing charge.",
+    "resolved_at": "2026-02-20"
+  }
+]

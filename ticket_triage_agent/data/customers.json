@@ -1,0 +1,114 @@
+[
+  {
+    "customer_id": "C-1001",
+    "source": "customer:C-1001",
+    "name": "Avery Chen",
+    "email": "avery.chen@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1002",
+    "source": "customer:C-1002",
+    "name": "Blake Ortiz",
+    "email": "blake.ortiz@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1003",
+    "source": "customer:C-1003",
+    "name": "Casey Nguyen",
+    "email": "casey.nguyen@example.com",
+    "plan": "plus",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1004",
+    "source": "customer:C-1004",
+    "name": "Drew Patel",
+    "email": "drew.patel@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1005",
+    "source": "customer:C-1005",
+    "name": "Ellis Romero",
+    "email": "ellis.romero@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1006",
+    "source": "customer:C-1006",
+    "name": "Frankie Dahl",
+    "email": "frankie.dahl@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1007",
+    "source": "customer:C-1007",
+    "name": "Gray Ibarra",
+    "email": "gray.ibarra@example.com",
+    "plan": "none",
+    "status": "closed"
+  },
+  {
+    "customer_id": "C-1008",
+    "source": "customer:C-1008",
+    "name": "Harper Quinn",
+    "email": "harper.quinn@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1010",
+    "source": "customer:C-1010",
+    "name": "Indigo Shah",
+    "email": "indigo.shah@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1011",
+    "source": "customer:C-1011",
+    "name": "Jules Vega",
+    "email": "jules.vega@example.com",
+    "plan": "plus",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1012",
+    "source": "customer:C-1012",
+    "name": "Kai Brooks",
+    "email": "kai.brooks@example.com",
+    "plan": "standard",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1013",
+    "source": "customer:C-1013",
+    "name": "Logan Ellis",
+    "email": "logan.ellis@example.com",
+    "plan": "plus",
+    "status": "active"
+  },
+  {
+    "customer_id": "C-1014",
+    "source": "customer:C-1014",
+    "name": "Morgan Hale",
+    "email": "morgan.hale@example.com",
+    "plan": "monthly",
+    "status": "canceled"
+  },
+  {
+    "customer_id": "C-1015",
+    "source": "customer:C-1015",
+    "name": "Noor Adeyemi",
+    "email": "noor.adeyemi@example.com",
+    "plan": "plus",
+    "status": "active"
+  }
+]

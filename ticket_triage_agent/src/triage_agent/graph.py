@@ -34,13 +34,16 @@ def build_graph(
     def triage_node(state: TicketState) -> dict:
         return triage(state, model=model)
 
+    def investigator_node(state: TicketState) -> dict:
+        return investigator(state, model=model, settings=active)
+
     def route(state: TicketState) -> _Next:
         return cast(_Next, state["next_node"])
 
     graph = StateGraph(TicketState)
     graph.add_node("supervisor", supervisor_node)
     graph.add_node("triage", triage_node)
-    graph.add_node("investigator", investigator)
+    graph.add_node("investigator", investigator_node)
     graph.add_node("responder", responder)
     graph.add_node("hitl", review)
     graph.add_node("send", send)

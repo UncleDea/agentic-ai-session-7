@@ -1,0 +1,44 @@
+[
+  {
+    "id": "KB-001",
+    "source": "kb:KB-001",
+    "title": "Duplicate charge",
+    "body": "When a customer was charged twice for one order, confirm both amounts on the order before reversing the extra charge."
+  },
+  {
+    "id": "KB-002",
+    "source": "kb:KB-002",
+    "title": "Shipment not moved: tracking stuck at label created",
+    "body": "If tracking has said label created for several days, check the shipment status before promising a new delivery date."
+  },
+  {
+    "id": "KB-003",
+    "source": "kb:KB-003",
+    "title": "Damaged item refund",
+    "body": "A damaged item can be refunded to the original payment method after the order is confirmed."
+  },
+  {
+    "id": "KB-004",
+    "source": "kb:KB-004",
+    "title": "Cannot log in",
+    "body": "If the password is rejected after a reset, verify the account email before sending another reset."
+  },
+  {
+    "id": "KB-005",
+    "source": "kb:KB-005",
+    "title": "App crashes on launch",
+    "body": "When the iOS app crashes on launch after an update, record the app version and phone model."
+  },
+  {
+    "id": "KB-006",
+    "source": "kb:KB-006",
+    "title": "Change account email",
+    "body": "An account email change must match the login email on the account before it is updated."
+  },
+  {
+    "id": "KB-007",
+    "source": "kb:KB-007",
+    "title": "Gift wrap in stores",
+    "body": "Stores offer gift wrap. The company was founded in 2014."
+  }
+]

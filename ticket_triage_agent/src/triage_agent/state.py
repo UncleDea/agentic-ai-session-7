@@ -113,15 +113,41 @@ class TriageResult(_Model):
 
 
 class Finding(_Model):
-    fact: str
-    source: str
+    fact: str = Field(description="One fact copied from a tool record.")
+    source: str = Field(
+        min_length=1,
+        description="Source string copied from that same tool record.",
+    )
 
 
 class Investigation(_Model):
-    findings: list[Finding] = Field(default_factory=list)
-    related_ticket_ids: list[str] = Field(default_factory=list)
-    kb_article_ids: list[str] = Field(default_factory=list)
-    missing_info: list[str] = Field(default_factory=list)
+    findings: list[Finding] = Field(
+        default_factory=list,
+        description="Facts whose source and numbers appear in a tool record.",
+    )
+    related_ticket_ids: list[str] = Field(
+        default_factory=list,
+        description="Past ticket ids returned by search_past_tickets.",
+    )
+    kb_article_ids: list[str] = Field(
+        default_factory=list,
+        description="Article ids returned by search_kb.",
+    )
+    missing_info: list[str] = Field(
+        default_factory=list,
+        description=(
+            "A customer id that was not found, or an order id named in the "
+            "ticket that was not found. Empty past-ticket or knowledge-base "
+            "searches do not belong here."
+        ),
+    )
+    dropped_claims: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Findings removed because the source was not returned, or a "
+            "number, amount, date, or id in the text was not in that record."
+        ),
+    )
 
 
 class Draft(_Model):

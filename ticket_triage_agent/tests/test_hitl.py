@@ -32,7 +32,9 @@ from triage_agent.state import (
     Finding,
     Investigation,
     Priority,
+    Review,
     ReviewStatus,
+    RouteEntry,
     Sentiment,
     Ticket,
     TriageResult,
@@ -342,6 +344,48 @@ def test_approving_t011_redacts_the_episode(store, tmp_path) -> None:
     assert "88421" not in reply
     assert "49.00" not in reply
     assert "415-555-0134" not in reply
+
+
+def test_reloading_a_paused_run_emits_no_unregistered_type_warning(
+    store, tmp_path, caplog: pytest.LogCaptureFixture
+) -> None:
+    path = tmp_path / "cp.sqlite"
+    saver, graph = _compile(path, store)
+    config = thread_config("T-001", "serde")
+    state = _ready()
+    state["review"] = Review(status=ReviewStatus.pending)
+    try:
+        _pause(graph, state, config)
+    finally:
+        saver.conn.close()
+
+    from langgraph.checkpoint.serde.jsonplus import _warned_unregistered_types
+
+    _warned_unregistered_types.clear()
+    caplog.clear()
+    caplog.set_level(logging.WARNING, logger="langgraph.checkpoint.serde.jsonplus")
+    reopened = open_checkpointer(str(path))
+    try:
+        graph2 = build_graph(settings=Settings(), store=store, checkpointer=reopened)
+        snapshot = graph2.get_state(config)
+    finally:
+        reopened.conn.close()
+
+    assert "Deserializing unregistered type" not in caplog.text
+    values = snapshot.values
+    assert snapshot.next == ("hitl",)
+    assert isinstance(values["ticket"], Ticket)
+    assert values["ticket"].channel is Channel.email
+    assert isinstance(values["triage"], TriageResult)
+    assert values["triage"].category is Category.billing
+    assert values["triage"].priority is Priority.P1
+    assert values["triage"].sentiment is Sentiment.neutral
+    assert isinstance(values["investigation"], Investigation)
+    assert isinstance(values["draft"], Draft)
+    assert isinstance(values["review"], Review)
+    assert values["review"].status is ReviewStatus.pending
+    assert values["route_history"]
+    assert all(isinstance(entry, RouteEntry) for entry in values["route_history"])
 
 
 def test_resume_after_reopening_the_checkpointer(store, tmp_path) -> None:

@@ -5,13 +5,17 @@ from __future__ import annotations
 import sqlite3
 import uuid
 from collections.abc import Callable
+from enum import Enum
 from typing import Literal, TypedDict, cast
 
 from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.store.sqlite import SqliteStore
+from pydantic import BaseModel
 
+import triage_agent.state as state_types
 from triage_agent.config import Settings, get_settings
 from triage_agent.memory.store import store_for_settings
 from triage_agent.nodes.hitl import hitl
@@ -32,10 +36,29 @@ class PausedRun(TypedDict):
     reasons: list[str]
 
 
+def _state_serializer() -> JsonPlusSerializer:
+    """Allow every model and enum defined on the ticket state.
+
+    An explicit ``allowed_msgpack_modules`` list is what keeps those types
+    loadable once unregistered checkpoint types are blocked.
+    """
+    allowed: list[type] = []
+    for value in vars(state_types).values():
+        if not isinstance(value, type) or value.__module__ != state_types.__name__:
+            continue
+        try:
+            registered = issubclass(value, Enum) or issubclass(value, BaseModel)
+        except TypeError:
+            continue
+        if registered:
+            allowed.append(value)
+    return JsonPlusSerializer(allowed_msgpack_modules=allowed)
+
+
 def open_checkpointer(path: str) -> SqliteSaver:
     """Persistent saver. The caller keeps the connection open."""
     conn = sqlite3.connect(path, check_same_thread=False)
-    return SqliteSaver(conn)
+    return SqliteSaver(conn, serde=_state_serializer())
 
 
 def thread_config(ticket_id: str, run_id: str | None = None) -> dict:

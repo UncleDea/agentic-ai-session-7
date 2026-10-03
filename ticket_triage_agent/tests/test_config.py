@@ -21,6 +21,7 @@ _SETTING_ENV = (
     "HITL_CATEGORIES",
     "INVESTIGATION_CATEGORIES",
     "MEMORY_DB_PATH",
+    "CHECKPOINT_DB_PATH",
     "EMBEDDING_MODEL",
     "EMBEDDING_DIMS",
     "KB_MIN_SCORE",
@@ -69,6 +70,7 @@ def test_defaults_load_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
         Category.other,
     ]
     assert settings.memory_db_path is None
+    assert settings.checkpoint_db_path is None
     assert settings.embedding_model is None
     assert settings.embedding_dims == 1536
     assert settings.kb_min_score == 0.2
@@ -83,6 +85,7 @@ def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MAX_ITERATIONS", "3")
     monkeypatch.setenv("INVESTIGATION_CATEGORIES", "feedback")
     monkeypatch.setenv("MEMORY_DB_PATH", "data/memory.sqlite")
+    monkeypatch.setenv("CHECKPOINT_DB_PATH", "data/checkpoints.sqlite")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
     monkeypatch.setenv("KB_MIN_SCORE", "0.4")
     monkeypatch.setenv("KB_RELATIVE_MARGIN", "0.25")
@@ -93,6 +96,7 @@ def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     assert settings.max_iterations == 3
     assert settings.investigation_categories == [Category.feedback]
     assert settings.memory_db_path == "data/memory.sqlite"
+    assert settings.checkpoint_db_path == "data/checkpoints.sqlite"
     assert settings.embedding_model == "text-embedding-3-small"
     assert settings.kb_min_score == 0.4
     assert settings.kb_relative_margin == 0.25

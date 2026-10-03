@@ -43,6 +43,7 @@ class Settings(BaseModel):
         ]
     )
     memory_db_path: str | None = None
+    checkpoint_db_path: str | None = None
     embedding_model: str | None = None
     embedding_dims: int = Field(default=1536, ge=1)
     kb_min_score: float = Field(default=0.2, ge=0, le=1)
@@ -68,6 +69,7 @@ def _overrides() -> dict[str, object]:
         "MAX_REVISIONS": "max_revisions",
         "MAX_TOOL_CALLS": "max_tool_calls",
         "MEMORY_DB_PATH": "memory_db_path",
+        "CHECKPOINT_DB_PATH": "checkpoint_db_path",
         "EMBEDDING_MODEL": "embedding_model",
         "EMBEDDING_DIMS": "embedding_dims",
         "KB_MIN_SCORE": "kb_min_score",

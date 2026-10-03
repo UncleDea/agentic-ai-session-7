@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 
 import pytest
 from langchain_core.messages import AIMessage
+from langgraph.types import Command
 
 from triage_agent.config import Settings
-from triage_agent.graph import build_graph
+from triage_agent.graph import build_graph, open_checkpointer, thread_config
 from triage_agent.memory.store import FAKE_DIMS, FAKE_MODEL, fake_embeddings, open_store
 from triage_agent.nodes.responder import responder
 from triage_agent.nodes.supervisor import supervisor
@@ -462,10 +463,23 @@ def test_graph_spam_ends_without_sending(_no_live_model: None) -> None:
     assert result["escalated"] is False
 
 
-def test_graph_priority_hitl_then_sends(_no_live_model: None) -> None:
-    fake = FakeModel(_triage(priority=Priority.P1))
-    graph = build_graph(model=fake, settings=Settings())
-    result = graph.invoke(_state())
+def test_graph_priority_hitl_then_sends(_no_live_model: None, tmp_path) -> None:
+    saver = open_checkpointer(str(tmp_path / "checkpoints.sqlite"))
+    try:
+        fake = FakeModel(_triage(priority=Priority.P1))
+        graph = build_graph(model=fake, settings=Settings(), checkpointer=saver)
+        config = thread_config("T-001", "prio")
+        graph.invoke(_state(), config, durability="sync")
+        paused = graph.get_state(config)
+        assert paused.next == ("hitl",)
+        assert "priority P1" in paused.interrupts[0].value["reasons"]
+        result = graph.invoke(
+            Command(resume={"action": "approve"}),
+            config,
+            durability="sync",
+        )
+    finally:
+        saver.conn.close()
     assert [entry.node for entry in result["route_history"]] == [
         "triage",
         "investigator",

@@ -9,3 +9,6 @@ outbox/
 data/memory.sqlite
 data/memory.sqlite-wal
 data/memory.sqlite-shm
+data/checkpoints.sqlite
+data/checkpoints.sqlite-wal
+data/checkpoints.sqlite-shm

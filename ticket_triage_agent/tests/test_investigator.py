@@ -13,7 +13,7 @@ from langchain_core.messages import AIMessage
 
 from triage_agent.config import Settings, get_settings
 from triage_agent.graph import build_graph
-from triage_agent.nodes.investigator import investigator, load_prompt
+from triage_agent.nodes.investigator import investigator, kb_query, load_prompt
 from triage_agent.nodes.supervisor import supervisor
 from triage_agent.state import (
     Category,
@@ -27,7 +27,9 @@ from triage_agent.state import (
     initial_state,
 )
 from triage_agent.tools import build_tools
-from triage_agent.tools.knowledge_base import JsonKnowledgeBase
+from triage_agent.memory.semantic import seed_articles
+from triage_agent.memory.store import FAKE_DIMS, FAKE_MODEL, fake_embeddings, open_store
+from triage_agent.tools.knowledge_base import StoreKnowledgeBase
 from triage_agent.tools.ticket_db import (
     JsonCustomerStore,
     JsonOrderStore,
@@ -166,8 +168,53 @@ def test_search_past_tickets_stays_on_that_customer() -> None:
     assert body_only.records == []
 
 
+def _seeded_kb() -> StoreKnowledgeBase:
+    store = open_store(":memory:", fake_embeddings(), dims=FAKE_DIMS, model=FAKE_MODEL)
+    seed_articles(store)
+    return StoreKnowledgeBase(store)
+
+
+def test_kb_query_drops_order_numbers_ids_and_amounts() -> None:
+    billing = kb_query(
+        "Charged twice for order 88421",
+        "Billed twice for order 88421, once for $49.00 and again for $49.00. Ticket T-001.",
+    )
+    assert "88421" not in billing
+    assert "49.00" not in billing
+    assert "T-001" not in billing
+    assert "Charged twice" in billing
+    refund = kb_query(_by_id("T-005")["subject"], _by_id("T-005")["body"])
+    assert "7712" not in refund
+    assert "damaged" in refund
+    assert "refund" in refund.lower()
+
+
+def test_search_kb_uses_the_ticket_text_not_the_model_query() -> None:
+    class RecordingKB:
+        def __init__(self) -> None:
+            self.queries: list[str] = []
+
+        def search_kb(self, query: str) -> LookupResult:
+            self.queries.append(query)
+            return LookupResult(found=False, records=[], note="no matching knowledge base articles")
+
+    kb = RecordingKB()
+    model = ScriptedModel(
+        turns=[_call("search_kb", {"query": "zzzznomatch"}, "c1")],
+        investigation=Investigation(),
+    )
+    investigator(
+        _state_for("T-005"),
+        model=model,
+        settings=Settings(),
+        tools=build_tools(knowledge_base=kb),
+    )
+    assert kb.queries == [kb_query(_by_id("T-005")["subject"], _by_id("T-005")["body"])]
+    assert "7712" not in kb.queries[0]
+
+
 def test_search_kb_matches_keywords_and_ignores_other_articles() -> None:
-    kb = JsonKnowledgeBase()
+    kb = _seeded_kb()
     found = kb.search_kb("charged twice")
     ids = [row["id"] for row in found.records]
     assert "KB-001" in ids
@@ -178,13 +225,13 @@ def test_search_kb_matches_keywords_and_ignores_other_articles() -> None:
 
 
 def test_t004_subject_returns_the_tracking_article_first() -> None:
-    ids = [row["id"] for row in JsonKnowledgeBase().search_kb(_by_id("T-004")["subject"]).records]
+    ids = [row["id"] for row in _seeded_kb().search_kb(_by_id("T-004")["subject"]).records]
     assert ids[0] == "KB-002"
     assert "KB-001" not in ids
 
 
 def test_t005_subject_skips_charge_and_tracking_articles() -> None:
-    ids = [row["id"] for row in JsonKnowledgeBase().search_kb(_by_id("T-005")["subject"]).records]
+    ids = [row["id"] for row in _seeded_kb().search_kb(_by_id("T-005")["subject"]).records]
     assert "KB-001" not in ids
     assert "KB-002" not in ids
 

@@ -1,15 +1,20 @@
-"""Knowledge-base search. Keyword match now; an embedding store can replace it later."""
+"""Knowledge-base search over the semantic memory store."""
 
 from __future__ import annotations
 
-import json
+import logging
 import re
-from pathlib import Path
 from typing import Protocol
 
+from triage_agent.config import Settings
+from triage_agent.memory.semantic import public_article, search_articles
+from triage_agent.memory.store import SEMANTIC, store_for_settings
 from triage_agent.tools.ticket_db import LookupResult
 
-_DATA = Path(__file__).resolve().parents[3] / "data"
+logger = logging.getLogger("triage_agent.knowledge_base")
+
+EMPTY_KB_WARNING = "knowledge base is empty, run scripts/seed_memory.py"
+
 _WORD = re.compile(r"[a-z0-9]+")
 _TITLE_WEIGHT = 3
 _BODY_WEIGHT = 1
@@ -107,7 +112,7 @@ class KnowledgeBase(Protocol):
     def search_kb(self, query: str) -> LookupResult: ...
 
 
-def _tokens(text: str) -> set[str]:
+def content_tokens(text: str) -> set[str]:
     return {
         word
         for word in _WORD.findall(text.lower())
@@ -121,13 +126,13 @@ def rank_keywords(query: str, rows: list[dict], title_of, body_of, limit: int = 
     Past-ticket subjects are titles. A hit must clear the minimum score:
     one title word does, one body word does not.
     """
-    query_tokens = _tokens(query)
+    query_tokens = content_tokens(query)
     if not query_tokens:
         return []
     scored: list[tuple[int, dict]] = []
     for row in rows:
-        title_tokens = _tokens(title_of(row))
-        body_tokens = _tokens(body_of(row))
+        title_tokens = content_tokens(title_of(row))
+        body_tokens = content_tokens(body_of(row))
         score = 0
         for token in query_tokens:
             if token in title_tokens:
@@ -140,22 +145,38 @@ def rank_keywords(query: str, rows: list[dict], title_of, body_of, limit: int = 
     return [row for _, row in scored[:limit]]
 
 
-class JsonKnowledgeBase:
-    def __init__(self, path: Path | None = None) -> None:
-        kb_path = path or _DATA / "kb_articles.json"
-        self._rows = json.loads(kb_path.read_text(encoding="utf-8"))
+class StoreKnowledgeBase:
+    def __init__(self, store, settings: Settings | None = None) -> None:
+        self._store = store
+        self._settings = settings if settings is not None else Settings()
 
     def search_kb(self, query: str) -> LookupResult:
-        matches = rank_keywords(
+        if not self._store.search(SEMANTIC, limit=1):
+            logger.warning(EMPTY_KB_WARNING)
+            return LookupResult(
+                found=False,
+                records=[],
+                note="knowledge base is empty",
+            )
+        ranked = search_articles(
+            self._store,
             query,
-            self._rows,
-            lambda row: str(row.get("title", "")),
-            lambda row: str(row.get("body", "")),
+            limit=self._settings.memory_search_limit,
+            min_score=self._settings.kb_min_score,
+            relative_margin=self._settings.kb_relative_margin,
         )
-        if not matches:
+        if not ranked:
             return LookupResult(
                 found=False,
                 records=[],
                 note="no matching knowledge base articles",
             )
-        return LookupResult(found=True, records=matches)
+        return LookupResult(
+            found=True,
+            records=[public_article(value) for _, value in ranked],
+        )
+
+
+def knowledge_base_for_settings(settings: Settings | None = None) -> StoreKnowledgeBase:
+    active = settings if settings is not None else Settings()
+    return StoreKnowledgeBase(store_for_settings(active), settings=active)

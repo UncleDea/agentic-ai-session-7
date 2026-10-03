@@ -1,0 +1,26 @@
+[
+  {
+    "id": "EP-001",
+    "ticket_id": "T-SEED-001",
+    "category": "billing",
+    "subject": "Charged twice for one order",
+    "body": "The customer was billed twice and asked for the extra charge to be reversed.",
+    "approved_reply": "I confirmed both charges on the order and reversed the extra one."
+  },
+  {
+    "id": "EP-002",
+    "ticket_id": "T-SEED-002",
+    "category": "shipping",
+    "subject": "Tracking stuck at label created",
+    "body": "The shipment has not moved for several days.",
+    "approved_reply": "I checked the shipment. Tracking is still at label created, and I cannot promise a new delivery date."
+  },
+  {
+    "id": "EP-003",
+    "ticket_id": "T-SEED-003",
+    "category": "refund",
+    "subject": "Damaged item refund",
+    "body": "The headphones arrived damaged and the customer wants a refund to the original payment method.",
+    "approved_reply": "I confirmed the order and refunded the damaged item to the original payment method."
+  }
+]

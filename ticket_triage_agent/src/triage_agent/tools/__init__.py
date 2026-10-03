@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from langchain_core.tools import tool
 
-from triage_agent.tools.knowledge_base import JsonKnowledgeBase, KnowledgeBase
+from triage_agent.config import Settings
+from triage_agent.tools.knowledge_base import (
+    KnowledgeBase,
+    StoreKnowledgeBase,
+    knowledge_base_for_settings,
+)
 from triage_agent.tools.ticket_db import (
     CustomerStore,
     JsonCustomerStore,
@@ -17,13 +22,14 @@ from triage_agent.tools.ticket_db import (
 __all__ = [
     "CustomerStore",
     "JsonCustomerStore",
-    "JsonKnowledgeBase",
     "JsonOrderStore",
     "JsonPastTicketStore",
     "KnowledgeBase",
     "OrderStore",
     "PastTicketStore",
+    "StoreKnowledgeBase",
     "build_tools",
+    "knowledge_base_for_settings",
 ]
 
 
@@ -32,12 +38,17 @@ def build_tools(
     orders: OrderStore | None = None,
     past_tickets: PastTicketStore | None = None,
     knowledge_base: KnowledgeBase | None = None,
+    settings: Settings | None = None,
 ) -> list:
     """LangChain tools over the four lookup interfaces."""
     customer_store = customers if customers is not None else JsonCustomerStore()
     order_store = orders if orders is not None else JsonOrderStore()
     past_store = past_tickets if past_tickets is not None else JsonPastTicketStore()
-    kb_store = knowledge_base if knowledge_base is not None else JsonKnowledgeBase()
+    kb_store = (
+        knowledge_base
+        if knowledge_base is not None
+        else knowledge_base_for_settings(settings)
+    )
 
     @tool
     def get_customer(customer_id: str) -> str:
@@ -56,7 +67,7 @@ def build_tools(
 
     @tool
     def search_kb(query: str) -> str:
-        """Find knowledge-base articles by keyword. No hits is a normal result."""
+        """Find knowledge-base articles by meaning. No hits is a normal result."""
         return kb_store.search_kb(query).model_dump_json()
 
     return [get_customer, get_orders, search_past_tickets, search_kb]

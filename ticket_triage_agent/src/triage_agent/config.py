@@ -42,6 +42,12 @@ class Settings(BaseModel):
             Category.other,
         ]
     )
+    memory_db_path: str | None = None
+    embedding_model: str | None = None
+    embedding_dims: int = Field(default=1536, ge=1)
+    kb_min_score: float = Field(default=0.2, ge=0, le=1)
+    kb_relative_margin: float = Field(default=0.1, ge=0, le=1)
+    memory_search_limit: int = Field(default=3, ge=1)
 
 
 def _csv(name: str) -> list[str] | None:
@@ -61,6 +67,12 @@ def _overrides() -> dict[str, object]:
         "MAX_ITERATIONS": "max_iterations",
         "MAX_REVISIONS": "max_revisions",
         "MAX_TOOL_CALLS": "max_tool_calls",
+        "MEMORY_DB_PATH": "memory_db_path",
+        "EMBEDDING_MODEL": "embedding_model",
+        "EMBEDDING_DIMS": "embedding_dims",
+        "KB_MIN_SCORE": "kb_min_score",
+        "KB_RELATIVE_MARGIN": "kb_relative_margin",
+        "MEMORY_SEARCH_LIMIT": "memory_search_limit",
     }
     for env_name, field_name in scalar.items():
         value = os.getenv(env_name)

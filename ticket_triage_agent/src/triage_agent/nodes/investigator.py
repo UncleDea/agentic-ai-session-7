@@ -32,6 +32,8 @@ _MONTH_DATE = re.compile(
 _ID = re.compile(r"\b[A-Za-z]{1,3}-\d+\b")
 _NUMBER = re.compile(r"\d+(?:\.\d+)*")
 _LIMIT_NOTE = "Tool call limit reached. Do not call more tools."
+_MONEY = re.compile(r"\$\s?\d+(?:\.\d+)?|\b\d+\.\d{2}\b")
+_BARE_NUMBER = re.compile(r"\b\d{3,}\b")
 
 
 @dataclass
@@ -119,6 +121,15 @@ def _observe(name: str, payload: str) -> _Observation | None:
         records=[row for row in records if isinstance(row, dict)],
         note=str(data.get("note") or ""),
     )
+
+
+def kb_query(subject: str, body: str) -> str:
+    """Subject plus body, with order numbers, ids, and amounts removed."""
+    text = f"{subject} {body}"
+    text = _MONEY.sub(" ", text)
+    text = _ID.sub(" ", text)
+    text = _BARE_NUMBER.sub(" ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def _order_ids(ticket: Ticket) -> list[str]:
@@ -237,7 +248,7 @@ def investigator(
     try:
         active = settings if settings is not None else get_settings()
         chat = model if model is not None else get_chat_model()
-        tool_list = tools if tools is not None else build_tools()
+        tool_list = tools if tools is not None else build_tools(settings=active)
         tool_map = {item.name: item for item in tool_list}
         bound = chat.bind_tools(tool_list)
         messages = build_messages(ticket, state.get("triage"))
@@ -264,7 +275,10 @@ def investigator(
                         {"found": False, "records": [], "note": f"unknown tool {name}"}
                     )
                 else:
-                    output = tool_map[name].invoke(_args(call))
+                    args = _args(call)
+                    if name == "search_kb":
+                        args["query"] = kb_query(ticket.subject, ticket.body)
+                    output = tool_map[name].invoke(args)
                     payload = output if isinstance(output, str) else json.dumps(output)
                     seen = _observe(name, payload)
                     if seen is not None:

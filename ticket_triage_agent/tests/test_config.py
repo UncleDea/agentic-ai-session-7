@@ -20,6 +20,12 @@ _SETTING_ENV = (
     "HITL_SENTIMENTS",
     "HITL_CATEGORIES",
     "INVESTIGATION_CATEGORIES",
+    "MEMORY_DB_PATH",
+    "EMBEDDING_MODEL",
+    "EMBEDDING_DIMS",
+    "KB_MIN_SCORE",
+    "KB_RELATIVE_MARGIN",
+    "MEMORY_SEARCH_LIMIT",
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
 )
@@ -62,6 +68,12 @@ def test_defaults_load_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
         Category.legal,
         Category.other,
     ]
+    assert settings.memory_db_path is None
+    assert settings.embedding_model is None
+    assert settings.embedding_dims == 1536
+    assert settings.kb_min_score == 0.2
+    assert settings.kb_relative_margin == 0.1
+    assert settings.memory_search_limit == 3
 
 
 def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -70,11 +82,21 @@ def test_env_overrides(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CONFIDENCE_THRESHOLD", "0.4")
     monkeypatch.setenv("MAX_ITERATIONS", "3")
     monkeypatch.setenv("INVESTIGATION_CATEGORIES", "feedback")
+    monkeypatch.setenv("MEMORY_DB_PATH", "data/memory.sqlite")
+    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("KB_MIN_SCORE", "0.4")
+    monkeypatch.setenv("KB_RELATIVE_MARGIN", "0.25")
+    monkeypatch.setenv("MEMORY_SEARCH_LIMIT", "2")
     settings = get_settings()
     assert settings.model_provider == "anthropic"
     assert settings.confidence_threshold == 0.4
     assert settings.max_iterations == 3
     assert settings.investigation_categories == [Category.feedback]
+    assert settings.memory_db_path == "data/memory.sqlite"
+    assert settings.embedding_model == "text-embedding-3-small"
+    assert settings.kb_min_score == 0.4
+    assert settings.kb_relative_margin == 0.25
+    assert settings.memory_search_limit == 2
 
 
 def test_unknown_provider_rejected(monkeypatch: pytest.MonkeyPatch) -> None:

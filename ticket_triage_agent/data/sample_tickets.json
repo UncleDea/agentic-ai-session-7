@@ -1,0 +1,222 @@
+[
+  {
+    "id": "T-001",
+    "customer_id": "C-1001",
+    "channel": "email",
+    "subject": "Charged twice for order 88421",
+    "body": "I was billed twice on March 2 for order 88421, once for $49.00 and again for $49.00. Please reverse the extra charge.",
+    "created_at": "2026-03-03T15:04:00Z",
+    "expected": {
+      "category": "billing",
+      "priority": "P1",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-002",
+    "customer_id": "C-1002",
+    "channel": "chat",
+    "subject": "App crashes on launch",
+    "body": "After the latest update the iOS app closes immediately when I open it. I am on version 6.4.1, iPhone 14.",
+    "created_at": "2026-03-04T09:12:00Z",
+    "expected": {
+      "category": "technical",
+      "priority": "P3",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-003",
+    "customer_id": "C-1003",
+    "channel": "web",
+    "subject": "Change the email on my account",
+    "body": "Please update the login email on my account from old.user@example.com to new.user@example.com.",
+    "created_at": "2026-03-04T11:40:00Z",
+    "expected": {
+      "category": "account",
+      "priority": "P3",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-004",
+    "customer_id": "C-1004",
+    "channel": "email",
+    "subject": "Order 90210 has not moved",
+    "body": "Tracking for order 90210 has said label created for six days. The estimated delivery was yesterday.",
+    "created_at": "2026-03-05T16:22:00Z",
+    "expected": {
+      "category": "shipping",
+      "priority": "P3",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-005",
+    "customer_id": "C-1005",
+    "channel": "email",
+    "subject": "Refund for order 7712",
+    "body": "The headphones in order 7712 arrived damaged. I want a refund to my original payment method.",
+    "created_at": "2026-03-06T13:05:00Z",
+    "expected": {
+      "category": "refund",
+      "priority": "P2",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-006",
+    "customer_id": "C-1006",
+    "channel": "chat",
+    "subject": "Great support yesterday",
+    "body": "The agent who helped me reset my password was patient and clear. Thank you.",
+    "created_at": "2026-03-06T18:44:00Z",
+    "expected": {
+      "category": "feedback",
+      "priority": "P4",
+      "sentiment": "positive",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-007",
+    "customer_id": "C-1007",
+    "channel": "email",
+    "subject": "You won a gift card",
+    "body": "Congratulations! Click http://prize-claim.example to claim a $500 gift card. Share this with friends.",
+    "created_at": "2026-03-07T02:11:00Z",
+    "expected": {
+      "category": "spam",
+      "priority": "P4",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-008",
+    "customer_id": "C-1008",
+    "channel": "email",
+    "subject": "Do you sell gift wrap?",
+    "body": "I am writing a school project about your company history. When were you founded, and do you offer gift wrap in stores?",
+    "created_at": "2026-03-07T12:00:00Z",
+    "expected": {
+      "category": "other",
+      "priority": "P4",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-009",
+    "customer_id": "C-1009",
+    "channel": "web",
+    "subject": "Question",
+    "body": "",
+    "created_at": "2026-03-08T08:00:00Z",
+    "expected": {"edge": "empty"}
+  },
+  {
+    "id": "T-010",
+    "customer_id": "C-1010",
+    "channel": "chat",
+    "subject": "help",
+    "body": "help",
+    "created_at": "2026-03-08T08:05:00Z",
+    "expected": {"edge": "very_short"}
+  },
+  {
+    "id": "T-011",
+    "customer_id": "C-1011",
+    "channel": "email",
+    "subject": "No puedo iniciar sesión",
+    "body": "Hola, desde ayer no puedo entrar a mi cuenta. Me dice que la contraseña es incorrecta y ya la restablecí dos veces.",
+    "created_at": "2026-03-09T10:30:00Z",
+    "expected": {
+      "category": "account",
+      "priority": "P3",
+      "sentiment": "neutral",
+      "language": "es",
+      "needs_human": false,
+      "edge": "non_english"
+    }
+  },
+  {
+    "id": "T-012",
+    "customer_id": "C-1012",
+    "channel": "email",
+    "subject": "Late order and I want my money back",
+    "body": "Order 4419 was supposed to arrive on Monday and it is still in transit. I no longer need it. Please refund the order and cancel delivery.",
+    "created_at": "2026-03-10T14:18:00Z",
+    "expected": {
+      "category": "refund",
+      "priority": "P2",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": false,
+      "secondary_categories": ["shipping"],
+      "edge": "multi_issue"
+    }
+  },
+  {
+    "id": "T-013",
+    "customer_id": "C-1013",
+    "channel": "email",
+    "subject": "Someone else is in my account",
+    "body": "I got an email that my password was changed, but I did not do that. There is a new shipping address in Dallas. Please lock the account.",
+    "created_at": "2026-03-11T07:55:00Z",
+    "expected": {
+      "category": "security",
+      "priority": "P1",
+      "sentiment": "neutral",
+      "language": "en",
+      "needs_human": true,
+      "needs_human_reason": "account takeover",
+      "edge": "account_takeover"
+    }
+  },
+  {
+    "id": "T-014",
+    "customer_id": "C-1014",
+    "channel": "phone",
+    "subject": "This is the third billing error",
+    "body": "This is ridiculous. I canceled the $15 monthly plan on February 1 and you billed me again on March 1. I want the charge removed. I have asked twice already.",
+    "created_at": "2026-03-11T19:02:00Z",
+    "expected": {
+      "category": "billing",
+      "priority": "P1",
+      "sentiment": "negative",
+      "language": "en",
+      "needs_human": false
+    }
+  },
+  {
+    "id": "T-015",
+    "customer_id": "C-1015",
+    "channel": "email",
+    "subject": "Chargeback if this is not resolved",
+    "body": "If the unauthorized renewal of $120 is not refunded by Friday, my attorney will proceed and I will dispute the charge with my card issuer.",
+    "created_at": "2026-03-12T09:41:00Z",
+    "expected": {
+      "category": "legal",
+      "priority": "P1",
+      "sentiment": "negative",
+      "language": "en",
+      "needs_human": true,
+      "needs_human_reason": "chargeback threat",
+      "edge": "chargeback_threat"
+    }
+  }
+]

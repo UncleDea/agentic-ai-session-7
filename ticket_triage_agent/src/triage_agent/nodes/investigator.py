@@ -276,7 +276,7 @@ def investigator(
                     )
                 else:
                     args = _args(call)
-                    if name == "search_kb":
+                    if name in {"search_kb", "search_runbook"}:
                         args["query"] = kb_query(ticket.subject, ticket.body)
                     output = tool_map[name].invoke(args)
                     payload = output if isinstance(output, str) else json.dumps(output)

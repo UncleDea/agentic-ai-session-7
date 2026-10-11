@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -86,13 +87,25 @@ def open_store(path: str, embeddings, *, dims: int, model: str) -> SqliteStore:
     return store
 
 
+def bedrock_embeddings(model_id: str, *, dimensions: int = 1024):
+    """Titan Text Embeddings v2 (or another Bedrock model) in AWS_REGION."""
+    from langchain_aws import BedrockEmbeddings
+
+    region = os.getenv("AWS_REGION") or os.getenv("AWS_DEFAULT_REGION")
+    kwargs: dict[str, object] = {"model_id": model_id, "dimensions": dimensions}
+    if region:
+        kwargs["region_name"] = region
+    return BedrockEmbeddings(**kwargs)
+
+
 def store_for_settings(settings: Settings) -> SqliteStore:
     """Fake embeddings and `:memory:` unless settings name a model and a file."""
     path = settings.memory_db_path or ":memory:"
     if settings.embedding_model:
-        from langchain.embeddings import init_embeddings
-
-        embeddings = init_embeddings(settings.embedding_model, provider="openai")
+        embeddings = bedrock_embeddings(
+            settings.embedding_model,
+            dimensions=settings.embedding_dims,
+        )
         return open_store(
             path,
             embeddings,

@@ -1,0 +1,65 @@
+[
+  {
+    "charge_id": "ch-88421-1",
+    "order_id": "88421",
+    "source": "charge:88421:1",
+    "amount": "49.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-03-02"
+  },
+  {
+    "charge_id": "ch-88421-2",
+    "order_id": "88421",
+    "source": "charge:88421:2",
+    "amount": "49.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-03-02"
+  },
+  {
+    "charge_id": "ch-90210-1",
+    "order_id": "90210",
+    "source": "charge:90210:1",
+    "amount": "36.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-02-27"
+  },
+  {
+    "charge_id": "ch-7712-1",
+    "order_id": "7712",
+    "source": "charge:7712:1",
+    "amount": "80.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-02-20"
+  },
+  {
+    "charge_id": "ch-4419-1",
+    "order_id": "4419",
+    "source": "charge:4419:1",
+    "amount": "55.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-03-01"
+  },
+  {
+    "charge_id": "ch-15031-1",
+    "order_id": "15031",
+    "source": "charge:15031:1",
+    "amount": "15.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-03-01"
+  },
+  {
+    "charge_id": "ch-12044-1",
+    "order_id": "12044",
+    "source": "charge:12044:1",
+    "amount": "120.00",
+    "currency": "USD",
+    "status": "captured",
+    "charged_on": "2026-03-01"
+  }
+]

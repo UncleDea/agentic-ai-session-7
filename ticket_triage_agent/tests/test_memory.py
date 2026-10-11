@@ -8,8 +8,6 @@ import os
 from pathlib import Path
 
 import pytest
-from langchain.embeddings import init_embeddings
-
 from triage_agent.config import Settings, get_settings
 from triage_agent.nodes.investigator import kb_query
 from triage_agent.memory.episodic import (
@@ -273,16 +271,18 @@ def test_episode_persists_across_connections(tmp_path) -> None:
 def test_live_search_kb_paraphrase_and_neighbors() -> None:
     get_settings.cache_clear()
     get_settings()
-    key = os.getenv("OPENAI_API_KEY", "").strip()
-    if not key:
-        pytest.skip("OPENAI_API_KEY is not set")
-    os.environ["OPENAI_API_KEY"] = key
-    embeddings = init_embeddings("text-embedding-3-small", provider="openai")
+    if not os.getenv("AWS_ACCESS_KEY_ID", "").strip() or not os.getenv(
+        "AWS_SECRET_ACCESS_KEY", ""
+    ).strip():
+        pytest.skip("AWS credentials are not set")
+    from triage_agent.memory.store import bedrock_embeddings
+
+    embeddings = bedrock_embeddings("amazon.titan-embed-text-v2:0")
     opened = open_store(
         ":memory:",
         embeddings,
-        dims=1536,
-        model="text-embedding-3-small",
+        dims=1024,
+        model="amazon.titan-embed-text-v2:0",
     )
     try:
         seed_articles(opened)

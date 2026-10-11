@@ -1,0 +1,11 @@
+[
+  {
+    "refund_id": "rf-7712-1",
+    "order_id": "7712",
+    "source": "refund:7712:1",
+    "amount": "80.00",
+    "currency": "USD",
+    "status": "succeeded",
+    "refunded_on": "2026-02-22"
+  }
+]

@@ -29,14 +29,14 @@ def test_factory_passes_provider_and_model(monkeypatch: pytest.MonkeyPatch) -> N
 
     monkeypatch.setattr("triage_agent.llm.init_chat_model", fake_init)
     settings = Settings(
-        model_provider="anthropic",
-        model_name="claude-sonnet-4-6",
+        model_provider="bedrock_converse",
+        model_name="us.anthropic.claude-sonnet-4-6",
         temperature=0.0,
     )
     result = get_chat_model(settings)
     assert result is model
-    assert calls["model_name"] == "claude-sonnet-4-6"
-    assert calls["kwargs"]["model_provider"] == "anthropic"
+    assert calls["model_name"] == "us.anthropic.claude-sonnet-4-6"
+    assert calls["kwargs"]["model_provider"] == "bedrock_converse"
     assert calls["kwargs"]["temperature"] == 0.0
     model.invoke.assert_not_called()
 

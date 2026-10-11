@@ -1,0 +1,8 @@
+[
+  {
+    "id": "RB-001",
+    "source": "runbook:RB-001",
+    "title": "Duplicate charge",
+    "body": "When a customer was charged twice for one order, confirm both captured charges before a specialist reverses the extra charge."
+  }
+]

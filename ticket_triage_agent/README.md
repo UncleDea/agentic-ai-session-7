@@ -10,7 +10,7 @@ python -m venv .venv
 copy .env.example .env
 ```
 
-Set `OPENAI_API_KEY` in `.env` when `MODEL_PROVIDER` is `openai`. Thresholds, loop caps, and the embedding model are in `.env.example`. Commented names there are optional.
+Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_REGION` in `.env`. Chat uses Bedrock Converse. Embeddings use Amazon Titan Text v2. Thresholds and loop caps are in `.env.example`. Commented names there are optional.
 
 Seed the dev store once. This calls the embedding API and writes `data/memory.sqlite`:
 
@@ -24,7 +24,7 @@ Check that every uncommented name in `.env.example` is set, and that the store w
 .venv\Scripts\python scripts\run_ticket.py check
 ```
 
-The check prints missing setting names only. It does not print values. If the store was stamped with the fake embedder, delete `data/memory.sqlite`, set `EMBEDDING_MODEL` in `.env`, and run `scripts/seed_memory.py` again.
+The check prints missing setting names only. It does not print values. If the store was stamped with the fake embedder, or with a different embedding model, delete `data/memory.sqlite` and run `scripts/seed_memory.py` again. Seeding calls Bedrock. A store built with `text-embedding-3-small` cannot be reused at 1024 dimensions.
 
 Offline tests skip anything marked `live`:
 

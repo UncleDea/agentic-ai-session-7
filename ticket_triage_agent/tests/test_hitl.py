@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +25,14 @@ from triage_agent.memory.procedural import get_current, list_versions, rollback,
 from triage_agent.memory.semantic import seed_articles
 from triage_agent.memory.store import FAKE_DIMS, FAKE_MODEL, fake_embeddings, open_store
 from triage_agent.nodes.hitl import apply_decision, hitl
+from triage_agent.review_ui import decision_from_action, resume_thread
+from triage_agent.runtime_api import (
+    QUEUE_PREFIX,
+    handle_action,
+    prepare_session_files,
+    restore_queue,
+    save_queue,
+)
 from triage_agent.nodes.responder import responder
 from triage_agent.state import (
     Category,
@@ -136,6 +145,180 @@ def _pause(graph, state, config):
 
 def test_missing_ticket_is_an_error() -> None:
     assert hitl({})["errors"] == ["hitl: state has no ticket"]
+
+
+def test_incomplete_review_actions_do_not_resume() -> None:
+    assert decision_from_action("edit", "  ", "", False) == "edit requires text"
+    assert decision_from_action("reject", "reply", "  ", True) == "reject requires feedback"
+
+
+def test_runtime_actions_on_a_temporary_graph(store, tmp_path) -> None:
+    saver, graph = _compile(tmp_path / "cp.sqlite", store)
+    thread_id = "T-001-runtime"
+    try:
+        missing = handle_action(graph, {"action": "run", "ticket_id": "NOPE"})
+        assert "Unknown ticket id" in missing["error"]
+        _pause(graph, _ready(), thread_config("T-001", "runtime"))
+        listed = handle_action(graph, {"action": "list"})
+        assert any(row["thread_id"] == thread_id for row in listed["paused"])
+        loaded = handle_action(graph, {"action": "get", "thread_id": thread_id})
+        assert loaded["payload"]["ticket"]["id"] == "T-001"
+        refused = handle_action(
+            graph,
+            {
+                "action": "resume",
+                "thread_id": thread_id,
+                "decision_action": "edit",
+                "text": "  ",
+            },
+        )
+        assert refused["error"] == "edit requires text"
+        assert graph.get_state({"configurable": {"thread_id": thread_id}}).next == ("hitl",)
+        approved = handle_action(
+            graph,
+            {"action": "resume", "thread_id": thread_id, "decision_action": "approve"},
+        )
+    finally:
+        saver.conn.close()
+    assert approved["outcome"] == "sent"
+
+
+def test_prepare_session_files_copies_memory_once(tmp_path) -> None:
+    source = tmp_path / "seed.sqlite"
+    source.write_bytes(b"seed")
+    root = tmp_path / "session"
+    prepare_session_files(root, source)
+    assert (root / "memory.sqlite").read_bytes() == b"seed"
+    (root / "memory.sqlite").write_bytes(b"kept")
+    prepare_session_files(root, source)
+    assert (root / "memory.sqlite").read_bytes() == b"kept"
+    assert (root / "outbox").is_dir()
+    assert (root / "escalations").is_dir()
+
+
+class _FakeQueue:
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    def list_objects_v2(self, **kwargs):
+        prefix = kwargs["Prefix"]
+        contents = [{"Key": key} for key in self.objects if key.startswith(prefix)]
+        return {"Contents": contents, "IsTruncated": False}
+
+    def get_object(self, **kwargs):
+        return {"Body": _Bytes(self.objects[kwargs["Key"]])}
+
+    def put_object(self, **kwargs) -> None:
+        body = kwargs["Body"]
+        self.objects[kwargs["Key"]] = body if isinstance(body, bytes) else body.read()
+
+
+class _Bytes:
+    def __init__(self, payload: bytes) -> None:
+        self._payload = payload
+
+    def read(self) -> bytes:
+        return self._payload
+
+
+def _sqlite_with_row(path: Path, row_id: str) -> None:
+    conn = sqlite3.connect(path)
+    conn.execute("create table paused (id text)")
+    conn.execute("insert into paused values (?)", (row_id,))
+    conn.commit()
+    conn.close()
+
+
+def test_queue_snapshot_restores_into_a_new_directory(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("QUEUE_BUCKET", "queue-bucket")
+    source = tmp_path / "source"
+    (source / "outbox").mkdir(parents=True)
+    (source / "escalations").mkdir()
+    _sqlite_with_row(source / "checkpoints.sqlite", "T-001-abc")
+    (source / "outbox" / "T-001.json").write_text('{"ticket_id":"T-001"}', encoding="utf-8")
+    (source / "escalations" / "T-001.json").write_text('{"ticket_id":"T-001"}', encoding="utf-8")
+    client = _FakeQueue()
+    save_queue(source, client=client)
+    assert f"{QUEUE_PREFIX}checkpoints.sqlite" in client.objects
+    restored = tmp_path / "restored"
+    restored.mkdir()
+    (restored / "checkpoints.sqlite-wal").write_bytes(b"stale")
+    restore_queue(restored, client=client)
+    assert not (restored / "checkpoints.sqlite-wal").exists()
+    conn = sqlite3.connect(restored / "checkpoints.sqlite")
+    try:
+        assert conn.execute("select id from paused").fetchone()[0] == "T-001-abc"
+    finally:
+        conn.close()
+    assert json.loads((restored / "outbox" / "T-001.json").read_text())["ticket_id"] == "T-001"
+    assert (restored / "escalations" / "T-001.json").is_file()
+
+
+def test_save_reads_the_open_checkpointer(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("QUEUE_BUCKET", "queue-bucket")
+    root = tmp_path / "live"
+    (root / "outbox").mkdir(parents=True)
+    writer = sqlite3.connect(root / "checkpoints.sqlite", check_same_thread=False)
+    writer.execute("PRAGMA journal_mode=WAL")
+    writer.execute("create table checkpoints (thread_id text)")
+    writer.execute("insert into checkpoints values ('T-001-live')")
+    writer.commit()
+    graph = type("Graph", (), {})()
+    graph.checkpointer = type("Saver", (), {"conn": writer})()
+    graph.store = None
+    client = _FakeQueue()
+    try:
+        save_queue(root, client=client, graph=graph)
+    finally:
+        writer.close()
+    restored = tmp_path / "from-open"
+    restored.mkdir()
+    restore_queue(restored, client=client)
+    conn = sqlite3.connect(restored / "checkpoints.sqlite")
+    try:
+        assert conn.execute("select thread_id from checkpoints").fetchone()[0] == "T-001-live"
+    finally:
+        conn.close()
+
+
+def test_prepare_keeps_memory_restored_from_the_queue(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("QUEUE_BUCKET", "queue-bucket")
+    held = tmp_path / "held"
+    held.mkdir()
+    _sqlite_with_row(held / "memory.sqlite", "kept")
+    client = _FakeQueue()
+    save_queue(held, client=client)
+    seed = tmp_path / "seed.sqlite"
+    seed.write_bytes(b"seed")
+    root = tmp_path / "session"
+    prepare_session_files(root, seed, s3_client=client)
+    conn = sqlite3.connect(root / "memory.sqlite")
+    try:
+        assert conn.execute("select id from paused").fetchone()[0] == "kept"
+    finally:
+        conn.close()
+
+
+def test_save_queue_does_nothing_without_a_bucket(tmp_path) -> None:
+    root = tmp_path / "local"
+    root.mkdir()
+    (root / "outbox").mkdir()
+    (root / "outbox" / "T-001.json").write_text("{}", encoding="utf-8")
+    save_queue(root, client=_FakeQueue())
+    assert not (root / ".queue-snapshot").exists()
+
+
+def test_resume_thread_approve_returns_sent(store, tmp_path) -> None:
+    saver, graph = _compile(tmp_path / "cp.sqlite", store)
+    config = thread_config("T-001", "ui-approve")
+    try:
+        _pause(graph, _ready(), config)
+        decision = decision_from_action("approve", "", "", False)
+        assert not isinstance(decision, str)
+        outcome = resume_thread(graph, config["configurable"]["thread_id"], decision)
+    finally:
+        saver.conn.close()
+    assert outcome == "sent"
 
 
 def test_pause_shows_the_review_payload(store, tmp_path) -> None:
@@ -498,9 +681,10 @@ def _t011_state(ticket_id: str) -> dict:
 @pytest.mark.live
 def test_live_rule_drops_the_email_from_a_similar_ticket(store, tmp_path) -> None:
     settings = get_settings()
-    key_name = "OPENAI_API_KEY" if settings.model_provider == "openai" else "ANTHROPIC_API_KEY"
-    if not os.getenv(key_name):
-        pytest.skip(f"{key_name} is not set")
+    if not os.getenv("AWS_ACCESS_KEY_ID", "").strip() or not os.getenv(
+        "AWS_SECRET_ACCESS_KEY", ""
+    ).strip():
+        pytest.skip("AWS credentials are not set")
     seed_articles(store)
     first = responder(_t011_state("T-011"), settings=settings, store=store)
     draft = first.get("draft")

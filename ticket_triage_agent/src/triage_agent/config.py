@@ -16,13 +16,13 @@ _ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
 class Settings(BaseModel):
-    model_provider: Literal["openai", "anthropic"] = "openai"
-    model_name: str = "gpt-5.5"
+    model_provider: Literal["bedrock_converse"] = "bedrock_converse"
+    model_name: str = "us.anthropic.claude-sonnet-4-6"
     temperature: float = 0.0
     confidence_threshold: float = Field(default=0.7, ge=0, le=1)
     max_iterations: int = Field(default=10, ge=1)
     max_revisions: int = Field(default=2, ge=0)
-    max_tool_calls: int = Field(default=6, ge=1)
+    max_tool_calls: int = Field(default=8, ge=1)
     hitl_priorities: list[Priority] = Field(default_factory=lambda: [Priority.P1])
     hitl_sentiments: list[Sentiment] = Field(
         default_factory=lambda: [Sentiment.negative]
@@ -47,7 +47,7 @@ class Settings(BaseModel):
     outbox_dir: str = "outbox"
     escalations_dir: str = "escalations"
     embedding_model: str | None = None
-    embedding_dims: int = Field(default=1536, ge=1)
+    embedding_dims: int = Field(default=1024, ge=1)
     kb_min_score: float = Field(default=0.2, ge=0, le=1)
     kb_relative_margin: float = Field(default=0.1, ge=0, le=1)
     memory_search_limit: int = Field(default=3, ge=1)

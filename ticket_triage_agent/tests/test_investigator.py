@@ -155,6 +155,46 @@ def test_get_orders_returns_the_sample_order() -> None:
     assert [row["order_id"] for row in result.records] == ["88421"]
 
 
+def test_list_charges_returns_two_captured_charges_for_88421() -> None:
+    from triage_agent.tools.ticket_db import JsonChargeStore
+
+    result = JsonChargeStore().list_charges("88421")
+    assert result.found is True
+    assert len(result.records) == 2
+    assert {row["amount"] for row in result.records} == {"49.00"}
+    assert {row["status"] for row in result.records} == {"captured"}
+    assert {row["source"] for row in result.records} == {"charge:88421:1", "charge:88421:2"}
+
+
+def test_list_refunds_for_88421_is_empty() -> None:
+    from triage_agent.tools.ticket_db import JsonRefundStore
+
+    result = JsonRefundStore().list_refunds("88421")
+    assert result.found is True
+    assert result.records == []
+    assert result.note == "nothing has been reversed"
+
+
+def test_list_refunds_returns_the_7712_refund() -> None:
+    from triage_agent.tools.ticket_db import JsonRefundStore
+
+    result = JsonRefundStore().list_refunds("7712")
+    assert result.found is True
+    assert result.records[0]["source"] == "refund:7712:1"
+    assert result.records[0]["amount"] == "80.00"
+
+
+def test_search_runbook_matches_charged_twice() -> None:
+    from triage_agent.tools.ticket_db import JsonRunbookStore
+
+    found = JsonRunbookStore().search_runbook("charged twice")
+    assert found.found is True
+    assert found.records[0]["id"] == "RB-001"
+    assert found.records[0]["source"] == "runbook:RB-001"
+    empty = JsonRunbookStore().search_runbook("zzzznomatch")
+    assert empty.found is False
+
+
 def test_search_past_tickets_stays_on_that_customer() -> None:
     store = JsonPastTicketStore()
     found = store.search_past_tickets("C-1001", "duplicate")
@@ -250,13 +290,38 @@ def test_tool_selection_cites_the_customer_record() -> None:
     assert model.tool_names == [
         "get_customer",
         "get_orders",
+        "list_charges",
+        "list_refunds",
         "search_past_tickets",
+        "search_runbook",
         "search_kb",
     ]
     assert [item.fact for item in investigation.findings] == ["Avery Chen is active."]
     assert investigation.findings[0].source == "customer:C-1001"
     assert investigation.missing_info == []
     assert investigation.dropped_claims == []
+
+
+def test_unsourced_charge_amount_is_dropped() -> None:
+    from triage_agent.tools.ticket_db import JsonChargeStore
+
+    model = ScriptedModel(
+        turns=[_call("list_charges", {"order_id": "88421"}, "ch1")],
+        investigation=Investigation(
+            findings=[
+                Finding(fact="A third charge of 99.00 was captured.", source="charge:88421:1")
+            ]
+        ),
+    )
+    update = investigator(
+        _state_for("T-001"),
+        model=model,
+        settings=Settings(),
+        tools=build_tools(charges=JsonChargeStore()),
+    )
+    investigation = update["investigation"]
+    assert investigation.findings == []
+    assert investigation.dropped_claims == ["A third charge of 99.00 was captured."]
 
 
 def test_missing_customer_is_missing_info_and_not_invented() -> None:
@@ -547,9 +612,10 @@ def test_logs_ticket_id(caplog: pytest.LogCaptureFixture) -> None:
 @pytest.mark.live
 def test_live_investigation_prints_findings() -> None:
     settings = get_settings()
-    key_name = "OPENAI_API_KEY" if settings.model_provider == "openai" else "ANTHROPIC_API_KEY"
-    if not os.getenv(key_name):
-        pytest.skip(f"{key_name} is not set")
+    if not os.getenv("AWS_ACCESS_KEY_ID", "").strip() or not os.getenv(
+        "AWS_SECRET_ACCESS_KEY", ""
+    ).strip():
+        pytest.skip("AWS credentials are not set")
 
     lines: list[str] = []
     failures: list[str] = []

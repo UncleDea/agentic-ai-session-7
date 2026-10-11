@@ -307,9 +307,10 @@ def _report_line(ticket_id: str, expected: dict, predicted: dict | None, notes: 
 @pytest.mark.live
 def test_live_sample_accuracy(samples: list[dict]) -> None:
     settings = get_settings()
-    key_name = "OPENAI_API_KEY" if settings.model_provider == "openai" else "ANTHROPIC_API_KEY"
-    if not os.getenv(key_name):
-        pytest.skip(f"{key_name} is not set")
+    if not os.getenv("AWS_ACCESS_KEY_ID", "").strip() or not os.getenv(
+        "AWS_SECRET_ACCESS_KEY", ""
+    ).strip():
+        pytest.skip("AWS credentials are not set")
 
     lines: list[str] = []
     category_hits = 0

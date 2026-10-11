@@ -31,6 +31,18 @@ class PastTicketStore(Protocol):
     def search_past_tickets(self, customer_id: str, query: str) -> LookupResult: ...
 
 
+class ChargeStore(Protocol):
+    def list_charges(self, order_id: str) -> LookupResult: ...
+
+
+class RefundStore(Protocol):
+    def list_refunds(self, order_id: str) -> LookupResult: ...
+
+
+class RunbookStore(Protocol):
+    def search_runbook(self, query: str) -> LookupResult: ...
+
+
 def _load(path: Path) -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -75,4 +87,52 @@ class JsonPastTicketStore:
         )
         if not matches:
             return LookupResult(found=False, records=[], note="no matching past tickets")
+        return LookupResult(found=True, records=matches)
+
+
+class JsonChargeStore:
+    def __init__(self, path: Path | None = None) -> None:
+        self._rows = _load(path or _DATA / "charges.json")
+
+    def list_charges(self, order_id: str) -> LookupResult:
+        matches = [row for row in self._rows if row["order_id"] == order_id]
+        if not matches:
+            return LookupResult(
+                found=False,
+                records=[],
+                note=f"order {order_id} has no charges",
+            )
+        return LookupResult(found=True, records=matches)
+
+
+class JsonRefundStore:
+    def __init__(self, path: Path | None = None) -> None:
+        self._rows = _load(path or _DATA / "refunds.json")
+
+    def list_refunds(self, order_id: str) -> LookupResult:
+        matches = [row for row in self._rows if row["order_id"] == order_id]
+        if not matches:
+            return LookupResult(
+                found=True,
+                records=[],
+                note="nothing has been reversed",
+            )
+        return LookupResult(found=True, records=matches)
+
+
+class JsonRunbookStore:
+    def __init__(self, path: Path | None = None) -> None:
+        self._rows = _load(path or _DATA / "runbooks.json")
+
+    def search_runbook(self, query: str) -> LookupResult:
+        from triage_agent.tools.knowledge_base import rank_keywords
+
+        matches = rank_keywords(
+            query,
+            self._rows,
+            lambda row: str(row.get("title", "")),
+            lambda row: str(row.get("body", "")),
+        )
+        if not matches:
+            return LookupResult(found=False, records=[], note="no matching runbook")
         return LookupResult(found=True, records=matches)

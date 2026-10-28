@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket triage</title>
+  <style>
+    :root {
+      --ink: #1c1915;
+      --muted: #5c564c;
+      --paper: #f4f0e6;
+      --card: #fffdf8;
+      --line: #d9d0c1;
+      --stamp: #8c3a2f;
+      --ok: #1f6b45;
+      --hold: #8a5a12;
+      --focus: #2c4c3b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font: 16px/1.45 "Segoe UI", Candara, sans-serif;
+    }
+    header, main { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 28px 0 8px; }
+    h1 { font-family: Georgia, "Palatino Linotype", serif; font-size: 2rem; margin: 0; }
+    .lede { color: var(--muted); margin: 8px 0 0; max-width: 42rem; }
+    main { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.1fr); gap: 20px; padding: 20px 0 48px; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    h2 { font-size: 1.05rem; margin: 0 0 12px; }
+    label { display: block; font-size: 0.85rem; margin: 12px 0 4px; }
+    input, textarea, select, button { font: inherit; }
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 160px; resize: vertical; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 16px;
+      background: var(--focus);
+      color: #fff;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+    .stamp {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 2px 8px;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .stamp.wait { color: var(--stamp); }
+    .stamp.ok { color: var(--ok); }
+    .stamp.hold { color: var(--hold); }
+    dl { display: grid; grid-template-columns: 8.5rem 1fr; gap: 6px 12px; margin: 0; }
+    dt { color: var(--muted); }
+    dd { margin: 0; }
+    .warn {
+      background: #f8ebe6;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--stamp);
+      margin: 0 0 12px;
+    }
+    .quiet { color: var(--muted); }
+    #status { min-height: 1.2em; margin: 8px 0 0; }
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Ticket triage</h1>
+    <p class="lede">Classifies one ticket from its text: category, severity, confidence, and whether a person should review it. It does not look up accounts or send email. The OpenAI key stays in the terminal that started this page.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Ticket</h2>
+      <form id="ticket-form">
+        <label for="text">Customer message</label>
+        <textarea id="text" name="text" required placeholder="Authenticator codes loop back to the MFA page."></textarea>
+        <label for="customer_id">Customer id</label>
+        <input id="customer_id" name="customer_id" placeholder="priya.s@example.com">
+        <label for="channel">Channel</label>
+        <select id="channel" name="channel">
+          <option value="email">email</option>
+          <option value="form">form</option>
+          <option value="chat">chat</option>
+          <option value="other">other</option>
+        </select>
+        <div class="actions">
+          <button type="submit" id="classify">Classify</button>
+        </div>
+      </form>
+      <p id="status" class="quiet" role="status"></p>
+    </section>
+    <section>
+      <h2>Classification</h2>
+      <div id="result" class="quiet">No ticket yet.</div>
+    </section>
+  </main>
+  <script>
+    const result = document.querySelector("#result");
+    const status = document.querySelector("#status");
+    const button = document.querySelector("#classify");
+
+    document.querySelector("#ticket-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      button.disabled = true;
+      status.textContent = "Classifying…";
+      try {
+        const response = await fetch("/api/triage", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: form.get("text"),
+            customer_id: form.get("customer_id"),
+            channel: form.get("channel"),
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          status.textContent = payload.error || "The ticket could not be classified.";
+          return;
+        }
+        status.textContent = "";
+        render(payload);
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    function render(payload) {
+      const parts = [];
+      if (payload.classification_failed) {
+        parts.push('<p class="warn">Triage did not classify this ticket. Check the OpenAI key, then try again.</p>');
+      }
+      parts.push('<span class="stamp ' + stampClass(payload) + '">' + stampText(payload) + "</span>");
+      parts.push("<dl>");
+      row(parts, "Ticket", payload.ticket_id);
+      row(parts, "Category", payload.category);
+      row(parts, "Severity", payload.severity);
+      row(parts, "Confidence", String(payload.confidence));
+      row(parts, "Status", payload.status);
+      row(parts, "Next step", payload.next_node_hint);
+      row(parts, "Channel", payload.channel);
+      parts.push("</dl>");
+      if (payload.triage_reasoning) {
+        parts.push("<p>" + escapeHtml(payload.triage_reasoning) + "</p>");
+      }
+      result.className = "";
+      result.innerHTML = parts.join("");
+    }
+
+    function row(parts, label, value) {
+      parts.push("<dt>" + escapeHtml(label) + "</dt><dd>" + escapeHtml(value || "") + "</dd>");
+    }
+
+    function stampClass(payload) {
+      if (payload.classification_failed) return "wait";
+      if (payload.next_node_hint === "hitl") return "hold";
+      return "ok";
+    }
+
+    function stampText(payload) {
+      if (payload.classification_failed) return "Classification failed";
+      if (payload.next_node_hint === "hitl") return "Needs a person";
+      return "Triaged";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+  </script>
+</body>
+</html>

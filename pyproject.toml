@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "triage-agent"
 version = "0.1.0"
-description = "Triage node for a supervisor-pattern customer support system"
+description = "TICKET TRIAGE AGENT"
 requires-python = ">=3.11"
 dependencies = [
     "langchain-core>=0.3",
@@ -16,8 +16,11 @@ dependencies = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["triage_agent*", "supervisor*", "investigator*", "responder*", "hitl*", "send*"]
+include = ["triage_agent*", "supervisor*", "investigator*", "responder*", "hitl*", "send*", "web*"]
+
+[tool.setuptools.package-data]
+web = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["triage_agent/tests", "supervisor/tests", "investigator/tests", "responder/tests", "hitl/tests", "send/tests"]
+testpaths = ["triage_agent/tests", "supervisor/tests", "investigator/tests", "responder/tests", "hitl/tests", "send/tests", "web/tests"]
